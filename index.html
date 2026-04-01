@@ -10,6 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="Reps">
 <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; scroll-behavior: smooth; }
@@ -368,32 +369,42 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
 </div>
 
 <script>
-// ─── API Config ───
-const API = "__PORT_8000__".startsWith("__") ? "http://localhost:8000" : "__PORT_8000__";
+// ─── Supabase Config ───
+const SUPABASE_URL = 'https://quumikcwleunjjqmendv.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_cH6TEM6K01gTaQp_SMwiKw_KBqCIBdO';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ─── Persistence (cloud-backed with localStorage cache) ───
-// Local state cache (in-memory only — cloud is source of truth)
-let _localCache = null;
-function loadStateLocal() { return _localCache; }
-function saveStateLocal() { _localCache = { history: state.history, restSeconds: state.restSeconds, targetPullups: state.targetPullups, targetPushups: state.targetPushups }; }
+// ─── Device ID (stable across sessions) ───
+function getDeviceId() {
+  try {
+    let id = localStorage.getItem('repcounter_device_id');
+    if (!id) { id = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2); localStorage.setItem('repcounter_device_id', id); }
+    return id;
+  } catch(e) { return 'default-device'; }
+}
+const DEVICE_ID = getDeviceId();
+
+// ─── Persistence (Supabase cloud + localStorage cache) ───
+function loadStateLocal() { try { const s = localStorage.getItem('repcounter_v2'); return s ? JSON.parse(s) : null; } catch(e) { return null; } }
+function saveStateLocal() { try { localStorage.setItem('repcounter_v2', JSON.stringify({ history: state.history, restSeconds: state.restSeconds, targetPullups: state.targetPullups, targetPushups: state.targetPushups })); } catch(e) {} }
 
 async function syncFromCloud() {
   try {
     const [wRes, sRes] = await Promise.all([
-      fetch(`${API}/api/workouts`),
-      fetch(`${API}/api/settings`)
+      sb.from('workouts').select('*').eq('device_id', DEVICE_ID).order('date', { ascending: false }),
+      sb.from('settings').select('*').eq('device_id', DEVICE_ID).single()
     ]);
-    if (wRes.ok) {
-      const workouts = await wRes.json();
-      if (workouts.length > 0 || state.history.length === 0) {
-        state.history = workouts;
-      }
+    if (wRes.data && (wRes.data.length > 0 || state.history.length === 0)) {
+      state.history = wRes.data.map(r => ({
+        id: r.id, date: r.date,
+        sets: typeof r.sets === 'string' ? JSON.parse(r.sets) : r.sets,
+        pullTotal: r.pull_total, pushTotal: r.push_total
+      }));
     }
-    if (sRes.ok) {
-      const settings = await sRes.json();
-      state.restSeconds = settings.restSeconds || 90;
-      state.targetPullups = settings.targetPullups || 10;
-      state.targetPushups = settings.targetPushups || 20;
+    if (sRes.data) {
+      state.restSeconds = sRes.data.rest_seconds || 90;
+      state.targetPullups = sRes.data.target_pullups || 10;
+      state.targetPushups = sRes.data.target_pushups || 20;
       document.getElementById('restTime').value = state.restSeconds;
       document.getElementById('targetPullups').value = state.targetPullups;
       document.getElementById('targetPushups').value = state.targetPushups;
@@ -402,7 +413,7 @@ async function syncFromCloud() {
     renderHistory();
     renderCalendar();
     if (document.getElementById('panel-stats').classList.contains('active')) updateCharts();
-    console.log('[sync] Loaded from cloud:', state.history.length, 'workouts');
+    console.log('[sync] Loaded from Supabase:', state.history.length, 'workouts');
   } catch(e) {
     console.warn('[sync] Cloud unavailable, using local cache:', e.message);
   }
@@ -410,38 +421,25 @@ async function syncFromCloud() {
 
 async function saveWorkoutToCloud(workout) {
   try {
-    await fetch(`${API}/api/workouts`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        id: workout.id,
-        date: workout.date,
-        sets: workout.sets,
-        pull_total: workout.pullTotal,
-        push_total: workout.pushTotal
-      })
+    await sb.from('workouts').upsert({
+      id: workout.id, device_id: DEVICE_ID, date: workout.date,
+      sets: workout.sets, pull_total: workout.pullTotal, push_total: workout.pushTotal
     });
-    console.log('[sync] Workout saved to cloud');
-  } catch(e) { console.warn('[sync] Failed to save workout to cloud:', e.message); }
+    console.log('[sync] Workout saved to Supabase');
+  } catch(e) { console.warn('[sync] Failed to save workout:', e.message); }
 }
 
 async function deleteWorkoutFromCloud(workoutId) {
   try {
-    await fetch(`${API}/api/workouts/${workoutId}`, { method: 'DELETE' });
-    console.log('[sync] Workout deleted from cloud');
-  } catch(e) { console.warn('[sync] Failed to delete from cloud:', e.message); }
+    await sb.from('workouts').delete().eq('id', workoutId).eq('device_id', DEVICE_ID);
+  } catch(e) { console.warn('[sync] Failed to delete workout:', e.message); }
 }
 
 async function saveSettingsToCloud() {
   try {
-    await fetch(`${API}/api/settings`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        rest_seconds: state.restSeconds,
-        target_pullups: state.targetPullups,
-        target_pushups: state.targetPushups
-      })
+    await sb.from('settings').upsert({
+      device_id: DEVICE_ID, rest_seconds: state.restSeconds,
+      target_pullups: state.targetPullups, target_pushups: state.targetPushups
     });
   } catch(e) { console.warn('[sync] Failed to save settings:', e.message); }
 }
