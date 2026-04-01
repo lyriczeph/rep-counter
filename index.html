@@ -1266,13 +1266,6 @@ function updateCharts() {
     const sets = Array.isArray(w.sets) ? w.sets : (typeof w.sets === 'string' ? JSON.parse(w.sets) : []);
     sets.forEach(s => todaySets.push({ ...s, time: wTime }));
   });
-  // Debug: show date info in chart title
-  const chartTitle = document.querySelector('#panel-stats .chart-card:first-of-type h3');
-  if (chartTitle) {
-    const dbg = state.history.length > 0 ? ` [${todayKey} vs ${toLocalDateKey(state.history[0].date)}]` : ' [no data]';
-    chartTitle.textContent = 'Today\u2019s Sets' + dbg;
-  }
-
   if (dailySetsChart) dailySetsChart.destroy();
   if (todaySets.length > 0) {
     // Build pull-up and push-up datasets as {x: hour, y: reps} points
