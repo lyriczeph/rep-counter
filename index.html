@@ -396,6 +396,16 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
   font-weight: 500; color: var(--color-error); background: var(--color-surface); }
 .danger-btn:hover { background: var(--color-surface-offset); }
 
+/* Toggle switch */
+.toggle { position: relative; display: inline-block; width: 48px; height: 28px; flex-shrink: 0; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-slider { position: absolute; cursor: pointer; inset: 0; background: var(--color-surface-dynamic);
+  border-radius: var(--radius-full); transition: all var(--transition-interactive); }
+.toggle-slider::before { content: ''; position: absolute; height: 22px; width: 22px; left: 3px; bottom: 3px;
+  background: var(--color-text-inverse); border-radius: var(--radius-full); transition: all var(--transition-interactive); box-shadow: var(--shadow-sm); }
+.toggle input:checked + .toggle-slider { background: var(--color-primary); }
+.toggle input:checked + .toggle-slider::before { transform: translateX(20px); }
+
 /* Household / Group section */
 .group-card { background: var(--color-surface); border-radius: var(--radius-lg); padding: var(--space-4);
   margin-bottom: var(--space-3); box-shadow: var(--shadow-sm); }
@@ -564,6 +574,28 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
     <div class="setting-row">
       <span class="setting-label">Push-up target / set</span>
       <div class="setting-control"><input type="number" id="targetPushups" value="20" min="1" max="100"></div>
+    </div>
+
+    <div class="section-label">Reminders</div>
+    <div class="setting-row">
+      <span class="setting-label">Nudge me if inactive</span>
+      <label class="toggle"><input type="checkbox" id="nudgeToggle"><span class="toggle-slider"></span></label>
+    </div>
+    <div id="nudgeOptions" style="display:none">
+      <div class="setting-row">
+        <span class="setting-label">Nudge after</span>
+        <div class="setting-control">
+          <select id="nudgeInterval" style="padding:var(--space-1) var(--space-2);border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-bg);font:inherit;font-size:var(--text-sm);color:var(--color-text)">
+            <option value="2">2 hours</option>
+            <option value="3" selected>3 hours</option>
+            <option value="4">4 hours</option>
+          </select>
+        </div>
+      </div>
+      <div class="setting-row">
+        <span class="setting-label">Quiet hours</span>
+        <span class="setting-label" style="font-weight:400;color:var(--color-text-muted)">10 PM – 8 AM</span>
+      </div>
     </div>
 
     <!-- Household Section -->
@@ -1824,6 +1856,131 @@ renderCalendar();
     showSignIn();
   }
 })();
+
+// ─── Nudge Notifications ───
+let nudgeTimer = null;
+
+// Register service worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(e => console.warn('[sw] Registration failed:', e.message));
+}
+
+function isQuietHours() {
+  const hr = new Date().getHours();
+  return hr >= 22 || hr < 8; // 10 PM – 8 AM
+}
+
+function getLastWorkoutTime() {
+  const todayKey = toLocalDateKey(new Date());
+  const todayWorkouts = state.history.filter(w => toLocalDateKey(w.date) === todayKey);
+  if (todayWorkouts.length === 0) return null;
+  // Most recent workout
+  const latest = todayWorkouts.reduce((a, b) => new Date(a.date) > new Date(b.date) ? a : b);
+  return new Date(latest.date);
+}
+
+function sendNudgeNotification() {
+  if (isQuietHours()) return;
+  if (Notification.permission !== 'granted') return;
+
+  const lastTime = getLastWorkoutTime();
+  let body = 'Time for some reps?';
+  if (lastTime) {
+    const hoursAgo = Math.round((Date.now() - lastTime.getTime()) / 3600000);
+    body = `It\u2019s been ${hoursAgo}h since your last set. Time for some reps?`;
+  } else {
+    body = 'No reps logged today yet. Get some in?';
+  }
+
+  if (navigator.serviceWorker.controller) {
+    navigator.serviceWorker.ready.then(reg => {
+      reg.showNotification('Rep Counter', {
+        body: body,
+        icon: 'img/exercise-pullup-standard.webp',
+        badge: 'img/exercise-pullup-standard.webp',
+        tag: 'nudge',
+        renotify: true,
+      });
+    });
+  } else if ('Notification' in window) {
+    new Notification('Rep Counter', { body: body, tag: 'nudge' });
+  }
+}
+
+function startNudgeTimer() {
+  stopNudgeTimer();
+  const intervalHours = parseInt(document.getElementById('nudgeInterval').value) || 3;
+  const intervalMs = intervalHours * 60 * 60 * 1000;
+
+  // Check: how long since last workout?
+  const lastTime = getLastWorkoutTime();
+  let delay = intervalMs;
+  if (lastTime) {
+    const elapsed = Date.now() - lastTime.getTime();
+    delay = Math.max(intervalMs - elapsed, 60000); // At least 1 min
+  }
+
+  nudgeTimer = setTimeout(() => {
+    sendNudgeNotification();
+    // Repeat
+    nudgeTimer = setInterval(() => {
+      if (!isQuietHours()) sendNudgeNotification();
+    }, intervalMs);
+  }, delay);
+}
+
+function stopNudgeTimer() {
+  if (nudgeTimer) { clearTimeout(nudgeTimer); clearInterval(nudgeTimer); nudgeTimer = null; }
+}
+
+// Load nudge preference
+const savedNudge = localStorage.getItem('repcounter_nudge');
+const savedNudgeInterval = localStorage.getItem('repcounter_nudge_interval');
+if (savedNudge === 'true') {
+  document.getElementById('nudgeToggle').checked = true;
+  document.getElementById('nudgeOptions').style.display = 'block';
+  if (savedNudgeInterval) document.getElementById('nudgeInterval').value = savedNudgeInterval;
+  if (Notification.permission === 'granted') startNudgeTimer();
+}
+
+// Toggle handler
+document.getElementById('nudgeToggle').addEventListener('change', async (e) => {
+  if (e.target.checked) {
+    // Request notification permission
+    if ('Notification' in window && Notification.permission === 'default') {
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') {
+        e.target.checked = false;
+        alert('Notifications are blocked. Please enable them in your browser settings to use this feature.');
+        return;
+      }
+    } else if ('Notification' in window && Notification.permission === 'denied') {
+      e.target.checked = false;
+      alert('Notifications are blocked. Please enable them in your browser/phone settings for this site.');
+      return;
+    }
+    document.getElementById('nudgeOptions').style.display = 'block';
+    localStorage.setItem('repcounter_nudge', 'true');
+    startNudgeTimer();
+  } else {
+    document.getElementById('nudgeOptions').style.display = 'none';
+    localStorage.setItem('repcounter_nudge', 'false');
+    stopNudgeTimer();
+  }
+});
+
+// Interval change handler
+document.getElementById('nudgeInterval').addEventListener('change', (e) => {
+  localStorage.setItem('repcounter_nudge_interval', e.target.value);
+  if (document.getElementById('nudgeToggle').checked) startNudgeTimer();
+});
+
+// Reset nudge timer whenever a workout is saved
+const origSaveWorkout = window.saveWorkout;
+window.saveWorkout = function() {
+  origSaveWorkout();
+  if (document.getElementById('nudgeToggle').checked) startNudgeTimer();
+};
 </script>
 </body>
 </html>
