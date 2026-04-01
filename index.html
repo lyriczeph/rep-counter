@@ -1278,8 +1278,8 @@ function updateCharts() {
 
     dailySetsChart = new Chart(document.getElementById('dailySetsChart'), {
       type: 'bar', data: { datasets: [
-        { label: 'Pull-Ups', data: pullPoints, backgroundColor: getCS('--chart-primary'), borderColor: getCS('--chart-primary'), borderWidth: 1, borderRadius: 4, barPercentage: 0.6, categoryPercentage: 0.8 },
-        { label: 'Push-Ups', data: pushPoints, backgroundColor: getCS('--chart-secondary'), borderColor: getCS('--chart-secondary'), borderWidth: 1, borderRadius: 4, barPercentage: 0.6, categoryPercentage: 0.8 },
+        { label: 'Pull-Ups', data: pullPoints, backgroundColor: getCS('--color-primary'), borderColor: getCS('--color-primary'), borderWidth: 2, borderRadius: 6, barPercentage: 0.9, categoryPercentage: 0.9, minBarLength: 6 },
+        { label: 'Push-Ups', data: pushPoints, backgroundColor: getCS('--color-secondary'), borderColor: getCS('--color-secondary'), borderWidth: 2, borderRadius: 6, barPercentage: 0.9, categoryPercentage: 0.9, minBarLength: 6 },
       ] },
       options: {
         responsive: true, maintainAspectRatio: false,
