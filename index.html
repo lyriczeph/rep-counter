@@ -536,6 +536,7 @@ document.querySelectorAll('.exercise-tab').forEach(btn => {
 document.querySelectorAll('.type-btn').forEach(b => b.addEventListener('click', () => {
   document.querySelectorAll('#variantSelector .type-btn').forEach(x => x.classList.remove('active'));
   b.classList.add('active'); state.variant = b.dataset.type;
+  updateWeightVisibility();
 }));
 
 // ─── Weight Input ───
