@@ -75,14 +75,47 @@ input:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 1
 header { display: flex; align-items: center; justify-content: space-between; padding: var(--space-3) 0; margin-bottom: var(--space-4); }
 header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-items: center; gap: var(--space-2); }
 
+.header-right { display: flex; align-items: center; gap: var(--space-2); }
+
+.user-chip { display: none; align-items: center; gap: var(--space-2); padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-full); background: var(--color-surface-offset); font-size: var(--text-xs); font-weight: 500;
+  max-width: 140px; overflow: hidden; }
+.user-chip.visible { display: flex; }
+.user-chip img { width: 24px; height: 24px; border-radius: var(--radius-full); object-fit: cover; flex-shrink: 0; }
+.user-chip .user-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
 .theme-toggle { width: 40px; height: 40px; display: grid; place-items: center; border-radius: var(--radius-full);
   background: var(--color-surface-offset); min-height: 44px; min-width: 44px; }
 .theme-toggle:hover { background: var(--color-surface-offset-2); }
 
+/* Sign-in screen */
+.sign-in-screen { display: none; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 100dvh; padding: var(--space-8); text-align: center; }
+.sign-in-screen.visible { display: flex; }
+.sign-in-screen .app-logo { margin-bottom: var(--space-6); }
+.sign-in-screen .app-logo svg { width: 64px; height: 64px; color: var(--color-primary); }
+.sign-in-screen h2 { font-size: var(--text-xl); font-weight: 700; margin-bottom: var(--space-2); }
+.sign-in-screen .subtitle { font-size: var(--text-sm); color: var(--color-text-muted); margin-bottom: var(--space-8); max-width: 28ch; }
+
+.google-btn { display: inline-flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-6);
+  background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-full);
+  font-size: var(--text-sm); font-weight: 600; box-shadow: var(--shadow-sm); min-height: 48px;
+  transition: all var(--transition-interactive); }
+.google-btn:hover { background: var(--color-surface-offset); box-shadow: var(--shadow-md); }
+.google-btn svg { width: 20px; height: 20px; flex-shrink: 0; }
+
+.skip-link { margin-top: var(--space-6); font-size: var(--text-xs); color: var(--color-text-faint);
+  text-decoration: underline; text-underline-offset: 2px; }
+.skip-link:hover { color: var(--color-text-muted); }
+
+.app-shell { display: none; }
+.app-shell.visible { display: block; }
+
 /* Bottom nav */
 .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--color-surface);
-  border-top: 1px solid var(--color-divider); display: flex; z-index: 50;
+  border-top: 1px solid var(--color-divider); display: none; z-index: 50;
   padding-bottom: env(safe-area-inset-bottom, 0); }
+.bottom-nav.visible { display: flex; }
 .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
   padding: var(--space-2) var(--space-1); font-size: var(--text-xs); color: var(--color-text-muted);
   min-height: 52px; justify-content: center; }
@@ -213,6 +246,33 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
 .chart-card h3 { font-size: var(--text-sm); font-weight: 700; margin-bottom: var(--space-3); }
 .chart-wrap { position: relative; height: 200px; }
 
+/* Leaderboard */
+.leaderboard-card { background: var(--color-surface); border-radius: var(--radius-lg); padding: var(--space-4);
+  margin-bottom: var(--space-4); box-shadow: var(--shadow-sm); }
+.leaderboard-card h3 { font-size: var(--text-sm); font-weight: 700; margin-bottom: var(--space-3);
+  display: flex; align-items: center; gap: var(--space-2); }
+.leaderboard-card h3 svg { width: 18px; height: 18px; color: var(--color-orange); }
+.lb-empty { text-align: center; padding: var(--space-6) var(--space-4); color: var(--color-text-muted); font-size: var(--text-sm); }
+
+.lb-row { display: grid; grid-template-columns: 28px 36px 1fr auto; align-items: center; gap: var(--space-2);
+  padding: var(--space-3) 0; border-bottom: 1px solid var(--color-divider); }
+.lb-row:last-child { border-bottom: none; }
+.lb-rank { font-weight: 700; font-size: var(--text-sm); color: var(--color-text-muted); text-align: center;
+  font-variant-numeric: tabular-nums; }
+.lb-rank.gold { color: var(--color-orange); }
+.lb-avatar { width: 32px; height: 32px; border-radius: var(--radius-full); background: var(--color-surface-offset);
+  display: grid; place-items: center; font-size: var(--text-xs); font-weight: 700; color: var(--color-text-muted);
+  overflow: hidden; flex-shrink: 0; }
+.lb-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.lb-info { min-width: 0; }
+.lb-name { font-size: var(--text-sm); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lb-meta { font-size: var(--text-xs); color: var(--color-text-muted); display: flex; gap: var(--space-3); flex-wrap: wrap; }
+.lb-stats { text-align: right; font-variant-numeric: tabular-nums; }
+.lb-total { font-size: var(--text-sm); font-weight: 700; }
+.lb-breakdown { font-size: var(--text-xs); color: var(--color-text-muted); }
+.lb-pull { color: var(--color-primary); }
+.lb-push { color: var(--color-secondary); }
+
 /* History */
 .history-filter { display: flex; gap: var(--space-1); background: var(--color-surface-offset);
   border-radius: var(--radius-lg); padding: var(--space-1); margin-bottom: var(--space-4); }
@@ -250,12 +310,73 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
   font-weight: 500; color: var(--color-error); background: var(--color-surface); }
 .danger-btn:hover { background: var(--color-surface-offset); }
 
+/* Household / Group section */
+.group-card { background: var(--color-surface); border-radius: var(--radius-lg); padding: var(--space-4);
+  margin-bottom: var(--space-3); box-shadow: var(--shadow-sm); }
+.group-card h4 { font-size: var(--text-sm); font-weight: 700; margin-bottom: var(--space-2); }
+
+.invite-code-display { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3);
+  background: var(--color-surface-offset); border-radius: var(--radius-md); margin-bottom: var(--space-3);
+  cursor: pointer; }
+.invite-code-display:hover { background: var(--color-surface-offset-2); }
+.invite-code-display .code { font-size: var(--text-lg); font-weight: 700; font-variant-numeric: tabular-nums;
+  letter-spacing: 0.1em; color: var(--color-primary); flex: 1; }
+.invite-code-display .copy-hint { font-size: var(--text-xs); color: var(--color-text-faint); }
+
+.group-input-row { display: flex; gap: var(--space-2); margin-bottom: var(--space-2); }
+.group-input-row input { flex: 1; padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border);
+  border-radius: var(--radius-md); background: var(--color-bg); font: inherit; font-size: var(--text-sm);
+  color: var(--color-text); text-transform: uppercase; letter-spacing: 0.1em; }
+.group-input-row input::placeholder { text-transform: none; letter-spacing: normal; }
+
+.group-member { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-divider); }
+.group-member:last-child { border-bottom: none; }
+.group-member-avatar { width: 28px; height: 28px; border-radius: var(--radius-full);
+  background: var(--color-surface-offset); display: grid; place-items: center;
+  font-size: var(--text-xs); font-weight: 700; color: var(--color-text-muted); overflow: hidden; }
+.group-member-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.group-member-name { font-size: var(--text-sm); font-weight: 500; }
+
+.primary-btn { padding: var(--space-2) var(--space-4); border-radius: var(--radius-full); font-size: var(--text-sm);
+  font-weight: 600; color: var(--color-text-inverse); background: var(--color-primary); min-height: 44px; }
+.primary-btn:hover { background: var(--color-primary-hover); }
+
+.toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); padding: var(--space-2) var(--space-4);
+  background: var(--color-text); color: var(--color-bg); border-radius: var(--radius-full); font-size: var(--text-xs);
+  font-weight: 500; z-index: 200; opacity: 0; transition: opacity 200ms; pointer-events: none; }
+.toast.visible { opacity: 1; }
+
+/* Sign-in nudge for leaderboard when not logged in */
+.signin-nudge { text-align: center; padding: var(--space-6) var(--space-4); }
+.signin-nudge p { font-size: var(--text-sm); color: var(--color-text-muted); margin-bottom: var(--space-3); }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
 </style>
 </head>
 <body>
+
+<!-- Sign-in Screen -->
+<div class="sign-in-screen" id="signInScreen">
+  <div class="app-logo">
+    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <line x1="2" y1="6" x2="22" y2="6"/><line x1="4" y1="3" x2="4" y2="9"/><line x1="20" y1="3" x2="20" y2="9"/>
+      <line x1="12" y1="6" x2="12" y2="14"/><circle cx="12" cy="16" r="2"/>
+    </svg>
+  </div>
+  <h2>Rep Counter</h2>
+  <p class="subtitle">Track pull-ups & push-ups. Compete with your household.</p>
+  <button class="google-btn" id="googleSignIn">
+    <svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A10.96 10.96 0 001 12c0 1.77.42 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+    Sign in with Google
+  </button>
+  <button class="skip-link" id="skipSignIn">Continue without signing in</button>
+</div>
+
+<!-- App Shell (hidden until auth resolved) -->
+<div class="app-shell" id="appShell">
 <div class="app">
   <header>
     <h1>
@@ -265,9 +386,15 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
       </svg>
       Rep Counter
     </h1>
-    <button class="theme-toggle" data-theme-toggle aria-label="Toggle theme">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-    </button>
+    <div class="header-right">
+      <div class="user-chip" id="userChip">
+        <img id="userAvatar" src="" alt="">
+        <span class="user-name" id="userName"></span>
+      </div>
+      <button class="theme-toggle" data-theme-toggle aria-label="Toggle theme">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </div>
   </header>
 
   <!-- WORKOUT -->
@@ -318,6 +445,8 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
       <h3>30-Day Avg Reps / Set</h3>
       <div class="chart-wrap"><canvas id="avgChart"></canvas></div>
     </div>
+    <!-- Leaderboard section -->
+    <div id="leaderboardSection"></div>
   </div>
 
   <!-- HISTORY -->
@@ -346,19 +475,28 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
       <span class="setting-label">Push-up target / set</span>
       <div class="setting-control"><input type="number" id="targetPushups" value="20" min="1" max="100"></div>
     </div>
+
+    <!-- Household Section -->
+    <div id="householdSection"></div>
+
     <div class="section-label">Data</div>
     <div class="setting-row">
       <span class="setting-label">Export workout data</span>
       <button class="action-btn" id="exportData" style="font-size:var(--text-xs)">Export JSON</button>
     </div>
+
+    <!-- Account Section -->
+    <div id="accountSection"></div>
+
     <div style="text-align:center;margin-top:var(--space-6)">
       <button class="danger-btn" id="clearHistory">Clear all history</button>
     </div>
   </div>
 </div>
+</div>
 
 <!-- Bottom nav -->
-<nav class="bottom-nav">
+<nav class="bottom-nav" id="bottomNav">
   <button class="nav-item active" data-nav="workout" aria-label="Workout">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
     Count
@@ -386,6 +524,9 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
   </div>
 </div>
 
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
 <script>
 // ─── Supabase Config ───
 const SUPABASE_URL = 'https://quumikcwleunjjqmendv.supabase.co';
@@ -402,15 +543,184 @@ function getDeviceId() {
 }
 const DEVICE_ID = getDeviceId();
 
+// ─── Auth State ───
+let currentUser = null;  // null if anonymous
+let currentProfile = null; // { id, display_name, avatar_url, group_id }
+
+// ─── Toast ───
+function showToast(msg, duration = 2000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('visible');
+  setTimeout(() => t.classList.remove('visible'), duration);
+}
+
+// ─── Auth Functions ───
+async function handleAuthChange(event, session) {
+  console.log('[auth] Event:', event, session ? 'has session' : 'no session');
+  if (session && session.user) {
+    currentUser = session.user;
+    await loadOrCreateProfile();
+    await migrateDeviceWorkouts();
+    showAppShell();
+    updateUserChip();
+    renderHouseholdSection();
+    renderAccountSection();
+    syncFromCloud();
+  } else if (event === 'SIGNED_OUT') {
+    currentUser = null;
+    currentProfile = null;
+    updateUserChip();
+    renderHouseholdSection();
+    renderAccountSection();
+    showSignIn();
+  }
+}
+
+async function loadOrCreateProfile() {
+  if (!currentUser) return;
+  try {
+    const { data, error } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+    if (data) {
+      currentProfile = data;
+      // Update profile if Google gives us newer info
+      const meta = currentUser.user_metadata || {};
+      const newName = meta.full_name || meta.name;
+      const newAvatar = meta.avatar_url || meta.picture;
+      if (newName && newName !== data.display_name || newAvatar && newAvatar !== data.avatar_url) {
+        const updates = {};
+        if (newName) updates.display_name = newName;
+        if (newAvatar) updates.avatar_url = newAvatar;
+        await sb.from('profiles').update(updates).eq('id', currentUser.id);
+        Object.assign(currentProfile, updates);
+      }
+    } else {
+      // Profile doesn't exist yet (trigger may not have fired), create it
+      const meta = currentUser.user_metadata || {};
+      const profile = {
+        id: currentUser.id,
+        display_name: meta.full_name || meta.name || currentUser.email?.split('@')[0] || 'User',
+        avatar_url: meta.avatar_url || meta.picture || null,
+        group_id: null
+      };
+      await sb.from('profiles').upsert(profile);
+      currentProfile = profile;
+    }
+  } catch(e) {
+    console.warn('[auth] Failed to load profile:', e.message);
+    // Create a local fallback
+    const meta = currentUser.user_metadata || {};
+    currentProfile = {
+      id: currentUser.id,
+      display_name: meta.full_name || meta.name || 'User',
+      avatar_url: meta.avatar_url || meta.picture || null,
+      group_id: null
+    };
+  }
+}
+
+async function migrateDeviceWorkouts() {
+  if (!currentUser) return;
+  try {
+    // Check if we already migrated (flag in localStorage)
+    const migrateKey = 'repcounter_migrated_' + currentUser.id;
+    if (localStorage.getItem(migrateKey)) return;
+
+    // Find workouts with this device_id that have no user_id
+    const { data: deviceWorkouts } = await sb.from('workouts')
+      .select('id')
+      .eq('device_id', DEVICE_ID)
+      .is('user_id', null);
+
+    if (deviceWorkouts && deviceWorkouts.length > 0) {
+      // Update them to belong to this user
+      const { error } = await sb.from('workouts')
+        .update({ user_id: currentUser.id })
+        .eq('device_id', DEVICE_ID)
+        .is('user_id', null);
+      if (!error) {
+        console.log('[migrate] Migrated', deviceWorkouts.length, 'workouts to user');
+      } else {
+        console.warn('[migrate] Error migrating workouts:', error.message);
+      }
+    }
+
+    // Migrate settings too
+    await sb.from('settings')
+      .update({ user_id: currentUser.id })
+      .eq('device_id', DEVICE_ID)
+      .is('user_id', null);
+
+    localStorage.setItem(migrateKey, '1');
+  } catch(e) {
+    console.warn('[migrate] Migration error:', e.message);
+  }
+}
+
+function showSignIn() {
+  document.getElementById('signInScreen').classList.add('visible');
+  document.getElementById('appShell').classList.remove('visible');
+  document.getElementById('bottomNav').classList.remove('visible');
+}
+
+function showAppShell() {
+  document.getElementById('signInScreen').classList.remove('visible');
+  document.getElementById('appShell').classList.add('visible');
+  document.getElementById('bottomNav').classList.add('visible');
+}
+
+function updateUserChip() {
+  const chip = document.getElementById('userChip');
+  const avatar = document.getElementById('userAvatar');
+  const name = document.getElementById('userName');
+  if (currentProfile && currentUser) {
+    chip.classList.add('visible');
+    name.textContent = (currentProfile.display_name || '').split(' ')[0]; // first name only
+    if (currentProfile.avatar_url) {
+      avatar.src = currentProfile.avatar_url;
+      avatar.style.display = 'block';
+    } else {
+      avatar.style.display = 'none';
+    }
+  } else {
+    chip.classList.remove('visible');
+  }
+}
+
+// Google Sign-In
+document.getElementById('googleSignIn').addEventListener('click', async () => {
+  const { error } = await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.origin + window.location.pathname }
+  });
+  if (error) { showToast('Sign-in failed: ' + error.message); }
+});
+
+// Skip sign-in
+document.getElementById('skipSignIn').addEventListener('click', () => {
+  localStorage.setItem('repcounter_skip_signin', '1');
+  showAppShell();
+  syncFromCloud();
+  renderHouseholdSection();
+  renderAccountSection();
+});
+
 // ─── Persistence (Supabase cloud + localStorage cache) ───
 function loadStateLocal() { try { const s = localStorage.getItem('repcounter_v2'); return s ? JSON.parse(s) : null; } catch(e) { return null; } }
 function saveStateLocal() { try { localStorage.setItem('repcounter_v2', JSON.stringify({ history: state.history, restSeconds: state.restSeconds, targetPullups: state.targetPullups, targetPushups: state.targetPushups })); } catch(e) {} }
 
+// Returns the identifier column/value for cloud queries
+function getCloudIdentifier() {
+  if (currentUser) return { column: 'user_id', value: currentUser.id };
+  return { column: 'device_id', value: DEVICE_ID };
+}
+
 async function syncFromCloud() {
   try {
+    const { column, value } = getCloudIdentifier();
     const [wRes, sRes] = await Promise.all([
-      sb.from('workouts').select('*').eq('device_id', DEVICE_ID).order('date', { ascending: false }),
-      sb.from('settings').select('*').eq('device_id', DEVICE_ID).single()
+      sb.from('workouts').select('*').eq(column, value).order('date', { ascending: false }),
+      sb.from('settings').select('*').eq(column, value).single()
     ]);
     if (wRes.data && (wRes.data.length > 0 || state.history.length === 0)) {
       state.history = wRes.data.map(r => ({
@@ -430,7 +740,7 @@ async function syncFromCloud() {
     saveStateLocal();
     renderHistory();
     renderCalendar();
-    if (document.getElementById('panel-stats').classList.contains('active')) updateCharts();
+    if (document.getElementById('panel-stats').classList.contains('active')) { updateCharts(); renderLeaderboard(); }
     console.log('[sync] Loaded from Supabase:', state.history.length, 'workouts');
   } catch(e) {
     console.warn('[sync] Cloud unavailable, using local cache:', e.message);
@@ -439,26 +749,31 @@ async function syncFromCloud() {
 
 async function saveWorkoutToCloud(workout) {
   try {
-    await sb.from('workouts').upsert({
+    const row = {
       id: workout.id, device_id: DEVICE_ID, date: workout.date,
       sets: workout.sets, pull_total: workout.pullTotal, push_total: workout.pushTotal
-    });
+    };
+    if (currentUser) row.user_id = currentUser.id;
+    await sb.from('workouts').upsert(row);
     console.log('[sync] Workout saved to Supabase');
   } catch(e) { console.warn('[sync] Failed to save workout:', e.message); }
 }
 
 async function deleteWorkoutFromCloud(workoutId) {
   try {
-    await sb.from('workouts').delete().eq('id', workoutId).eq('device_id', DEVICE_ID);
+    const { column, value } = getCloudIdentifier();
+    await sb.from('workouts').delete().eq('id', workoutId).eq(column, value);
   } catch(e) { console.warn('[sync] Failed to delete workout:', e.message); }
 }
 
 async function saveSettingsToCloud() {
   try {
-    await sb.from('settings').upsert({
+    const row = {
       device_id: DEVICE_ID, rest_seconds: state.restSeconds,
       target_pullups: state.targetPullups, target_pushups: state.targetPushups
-    });
+    };
+    if (currentUser) row.user_id = currentUser.id;
+    await sb.from('settings').upsert(row);
   } catch(e) { console.warn('[sync] Failed to save settings:', e.message); }
 }
 
@@ -496,7 +811,8 @@ document.querySelectorAll('.nav-item').forEach(item => {
     item.classList.add('active');
     document.getElementById('panel-' + item.dataset.nav).classList.add('active');
     if (item.dataset.nav === 'history') renderHistory();
-    if (item.dataset.nav === 'stats') { renderCalendar(); updateCharts(); }
+    if (item.dataset.nav === 'stats') { renderCalendar(); updateCharts(); renderLeaderboard(); }
+    if (item.dataset.nav === 'settings') { renderHouseholdSection(); renderAccountSection(); }
   });
 });
 
@@ -505,11 +821,9 @@ function setExercise(ex) {
   state.exercise = ex;
   document.querySelectorAll('.exercise-tab').forEach(b => b.classList.remove('active'));
   document.querySelector(`.exercise-tab[data-ex="${ex}"]`).classList.add('active');
-  // Update colors
   document.getElementById('repCount').className = 'count-display ' + ex;
   document.getElementById('addRep').className = 'counter-btn ' + ex;
   document.getElementById('finishSet').className = 'action-btn primary ' + ex;
-  // Update variant options
   const vs = document.getElementById('variantSelector');
   if (ex === 'pullup') {
     vs.innerHTML = '<button class="type-btn active" data-type="standard">Standard</button><button class="type-btn" data-type="eccentric">Eccentric</button><button class="type-btn" data-type="weighted">Weighted</button>';
@@ -522,9 +836,7 @@ function setExercise(ex) {
     b.classList.add('active'); state.variant = b.dataset.type;
     updateWeightVisibility();
   }));
-  // Rest timer color
   document.querySelector('.rest-timer').style.color = ex === 'pullup' ? 'var(--color-primary)' : 'var(--color-secondary)';
-  // Show/hide weight input
   updateWeightVisibility();
 }
 
@@ -643,7 +955,6 @@ document.getElementById('skipRest').addEventListener('click', endRest);
 
 // ─── Local Date Helpers ───
 function toLocalDateKey(d) {
-  // Returns YYYY-MM-DD in the user's local timezone
   const dt = (d instanceof Date) ? d : new Date(d);
   return dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
 }
@@ -674,7 +985,6 @@ function renderCalendar() {
     const v = vol[key] || { pull: 0, push: 0 };
     const hasPull = v.pull > 0, hasPush = v.push > 0;
     const cls = ['cal-cell', hasPull ? 'has-pullup' : '', hasPush ? 'has-pushup' : '', (hasPull && hasPush) ? 'has-both' : '', key === todayKey ? 'today' : ''].filter(Boolean).join(' ');
-    const hasSome = v.pull + v.push > 0;
     let countHtml = '';
     if (v.pull > 0 && v.push > 0) {
       countHtml = `<span class="cal-counts"><span class="cal-count pull">${v.pull}</span><span class="cal-sep">/</span><span class="cal-count push">${v.push}</span></span>`;
@@ -704,7 +1014,6 @@ function updateCharts() {
     labels.push(d.getDate() + '/' + (d.getMonth()+1));
     const v = vol[key] || { pull: 0, push: 0 };
     pullData.push(v.pull > 0 ? v.pull : null); pushData.push(v.push > 0 ? v.push : null);
-    // avg per set
     const dayW = state.history.filter(w => toLocalDateKey(w.date) === key);
     let pSets = 0, pReps = 0, uSets = 0, uReps = 0;
     dayW.forEach(w => w.sets.forEach(s => { if (s.exercise==='pullup'){pSets++;pReps+=s.reps;} else {uSets++;uReps+=s.reps;} }));
@@ -713,7 +1022,6 @@ function updateCharts() {
   }
   const grid = getCS('--chart-grid') || '#dcd9d5';
   const textC = getCS('--color-text-muted') || '#7a7974';
-  // chart opts defined inline below
 
   const lineBaseOpts = {
     responsive: true, maintainAspectRatio: false,
@@ -740,6 +1048,355 @@ function updateCharts() {
       { label: 'Push-Ups', data: pushAvg, borderColor: getCS('--chart-secondary'), backgroundColor: getCS('--chart-secondary-fill'), tension: 0.3, fill: true, pointRadius: 2, spanGaps: true },
     ] }, options: avgOpts
   });
+}
+
+// ─── Leaderboard ───
+async function renderLeaderboard() {
+  const section = document.getElementById('leaderboardSection');
+  if (!currentUser || !currentProfile || !currentProfile.group_id) {
+    if (!currentUser) {
+      section.innerHTML = `
+        <div class="leaderboard-card">
+          <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9H4.5a2.5 2.5 0 010-5C7 4 7 7 7 7M18 9h1.5a2.5 2.5 0 000-5C17 4 17 7 17 7M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 19.24 7 20v2M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 19.24 17 20v2M12 2v5"/><circle cx="12" cy="9" r="4"/></svg> Leaderboard</h3>
+          <div class="signin-nudge">
+            <p>Sign in and join a household to see the leaderboard.</p>
+          </div>
+        </div>`;
+    } else {
+      section.innerHTML = `
+        <div class="leaderboard-card">
+          <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9H4.5a2.5 2.5 0 010-5C7 4 7 7 7 7M18 9h1.5a2.5 2.5 0 000-5C17 4 17 7 17 7M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 19.24 7 20v2M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 19.24 17 20v2M12 2v5"/><circle cx="12" cy="9" r="4"/></svg> Leaderboard</h3>
+          <div class="lb-empty">Join a household in Settings to see the leaderboard.</div>
+        </div>`;
+    }
+    return;
+  }
+
+  section.innerHTML = `
+    <div class="leaderboard-card">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9H4.5a2.5 2.5 0 010-5C7 4 7 7 7 7M18 9h1.5a2.5 2.5 0 000-5C17 4 17 7 17 7M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 19.24 7 20v2M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 19.24 17 20v2M12 2v5"/><circle cx="12" cy="9" r="4"/></svg> Leaderboard</h3>
+      <div class="lb-empty" style="padding:var(--space-4)">Loading...</div>
+    </div>`;
+
+  try {
+    // Get group members
+    const { data: members } = await sb.from('profiles')
+      .select('id, display_name, avatar_url')
+      .eq('group_id', currentProfile.group_id);
+
+    if (!members || members.length === 0) {
+      section.querySelector('.lb-empty').textContent = 'No members in your group yet.';
+      return;
+    }
+
+    const memberIds = members.map(m => m.id);
+
+    // Get this week's boundaries (Monday to Sunday)
+    const now = new Date();
+    const dayOfWeek = now.getDay(); // 0=Sun, 1=Mon, ...
+    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + mondayOffset);
+    monday.setHours(0, 0, 0, 0);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    sunday.setHours(23, 59, 59, 999);
+
+    // Get all workouts for group members
+    const { data: workouts } = await sb.from('workouts')
+      .select('user_id, date, sets, pull_total, push_total')
+      .in('user_id', memberIds);
+
+    // Calculate stats per member
+    const stats = members.map(member => {
+      const mWorkouts = (workouts || []).filter(w => w.user_id === member.id);
+
+      // This week's totals
+      const weekWorkouts = mWorkouts.filter(w => {
+        const d = new Date(w.date);
+        return d >= monday && d <= sunday;
+      });
+      const weekPull = weekWorkouts.reduce((a, w) => a + (w.pull_total || 0), 0);
+      const weekPush = weekWorkouts.reduce((a, w) => a + (w.push_total || 0), 0);
+      const weekTotal = weekPull + weekPush;
+
+      // Current streak (consecutive days with at least 1 workout, going back from today)
+      let streak = 0;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const workoutDates = new Set(mWorkouts.map(w => toLocalDateKey(w.date)));
+      const checkDate = new Date(today);
+      // If no workout today, check if yesterday has one. If neither, streak is 0.
+      if (!workoutDates.has(toLocalDateKey(checkDate))) {
+        checkDate.setDate(checkDate.getDate() - 1);
+        if (!workoutDates.has(toLocalDateKey(checkDate))) {
+          streak = 0;
+        } else {
+          // Start counting from yesterday
+          while (workoutDates.has(toLocalDateKey(checkDate))) {
+            streak++;
+            checkDate.setDate(checkDate.getDate() - 1);
+          }
+        }
+      } else {
+        while (workoutDates.has(toLocalDateKey(checkDate))) {
+          streak++;
+          checkDate.setDate(checkDate.getDate() - 1);
+        }
+      }
+
+      // Best single set PRs
+      let prPull = 0, prPush = 0;
+      mWorkouts.forEach(w => {
+        const sets = typeof w.sets === 'string' ? JSON.parse(w.sets) : (w.sets || []);
+        sets.forEach(s => {
+          if (s.exercise === 'pullup' && s.reps > prPull) prPull = s.reps;
+          if (s.exercise === 'pushup' && s.reps > prPush) prPush = s.reps;
+        });
+      });
+
+      return {
+        ...member,
+        weekTotal, weekPull, weekPush,
+        streak,
+        prPull, prPush
+      };
+    });
+
+    // Sort by weekly total descending
+    stats.sort((a, b) => b.weekTotal - a.weekTotal);
+
+    // Render
+    let html = `<div class="leaderboard-card">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9H4.5a2.5 2.5 0 010-5C7 4 7 7 7 7M18 9h1.5a2.5 2.5 0 000-5C17 4 17 7 17 7M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 19.24 7 20v2M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 19.24 17 20v2M12 2v5"/><circle cx="12" cy="9" r="4"/></svg> This Week's Leaderboard</h3>`;
+
+    stats.forEach((m, i) => {
+      const rank = i + 1;
+      const initial = (m.display_name || '?').charAt(0).toUpperCase();
+      const avatarHtml = m.avatar_url
+        ? `<img src="${m.avatar_url}" alt="${m.display_name}">`
+        : initial;
+      html += `
+        <div class="lb-row">
+          <div class="lb-rank ${rank === 1 ? 'gold' : ''}">${rank}</div>
+          <div class="lb-avatar">${avatarHtml}</div>
+          <div class="lb-info">
+            <div class="lb-name">${m.display_name || 'User'}</div>
+            <div class="lb-meta">
+              <span>${m.streak}d streak</span>
+              <span>PR: <span class="lb-pull">${m.prPull}</span> / <span class="lb-push">${m.prPush}</span></span>
+            </div>
+          </div>
+          <div class="lb-stats">
+            <div class="lb-total">${m.weekTotal}</div>
+            <div class="lb-breakdown"><span class="lb-pull">${m.weekPull}</span> + <span class="lb-push">${m.weekPush}</span></div>
+          </div>
+        </div>`;
+    });
+
+    html += '</div>';
+    section.innerHTML = html;
+  } catch(e) {
+    console.warn('[leaderboard] Error:', e.message);
+    section.querySelector('.lb-empty').textContent = 'Unable to load leaderboard.';
+  }
+}
+
+// ─── Household / Group ───
+function generateInviteCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no I/O/0/1 for readability
+  let code = '';
+  for (let i = 0; i < 6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+  return code;
+}
+
+async function createGroup() {
+  if (!currentUser) return;
+  const name = prompt('Group name (e.g. "The Maynes Family"):');
+  if (!name || !name.trim()) return;
+
+  try {
+    const inviteCode = generateInviteCode();
+    const { data, error } = await sb.from('groups').insert({
+      name: name.trim(),
+      invite_code: inviteCode,
+      created_by: currentUser.id
+    }).select().single();
+
+    if (error) throw error;
+
+    // Update profile with group_id
+    await sb.from('profiles').update({ group_id: data.id }).eq('id', currentUser.id);
+    currentProfile.group_id = data.id;
+    showToast('Group created!');
+    renderHouseholdSection();
+    renderLeaderboard();
+  } catch(e) {
+    showToast('Error: ' + e.message);
+  }
+}
+
+async function joinGroup() {
+  if (!currentUser) return;
+  const input = document.getElementById('joinCodeInput');
+  const code = (input.value || '').trim().toUpperCase();
+  if (code.length !== 6) { showToast('Enter a 6-character code'); return; }
+
+  try {
+    const { data: group, error } = await sb.from('groups')
+      .select('id, name')
+      .eq('invite_code', code)
+      .single();
+
+    if (error || !group) { showToast('Invalid invite code'); return; }
+
+    await sb.from('profiles').update({ group_id: group.id }).eq('id', currentUser.id);
+    currentProfile.group_id = group.id;
+    showToast('Joined ' + group.name + '!');
+    input.value = '';
+    renderHouseholdSection();
+    renderLeaderboard();
+  } catch(e) {
+    showToast('Error: ' + e.message);
+  }
+}
+
+async function leaveGroup() {
+  if (!currentUser || !currentProfile?.group_id) return;
+  if (!confirm('Leave this group?')) return;
+  try {
+    await sb.from('profiles').update({ group_id: null }).eq('id', currentUser.id);
+    currentProfile.group_id = null;
+    showToast('Left group');
+    renderHouseholdSection();
+    renderLeaderboard();
+  } catch(e) { showToast('Error: ' + e.message); }
+}
+
+async function renderHouseholdSection() {
+  const section = document.getElementById('householdSection');
+  if (!currentUser) {
+    section.innerHTML = `
+      <div class="section-label">Household</div>
+      <div class="group-card">
+        <p style="font-size:var(--text-sm);color:var(--color-text-muted)">Sign in to create or join a household group.</p>
+      </div>`;
+    return;
+  }
+
+  if (!currentProfile?.group_id) {
+    section.innerHTML = `
+      <div class="section-label">Household</div>
+      <div class="group-card">
+        <h4>Create a Group</h4>
+        <p style="font-size:var(--text-xs);color:var(--color-text-muted);margin-bottom:var(--space-3)">Start a household and invite others to compete.</p>
+        <button class="primary-btn" onclick="createGroup()">Create Group</button>
+      </div>
+      <div class="group-card">
+        <h4>Join a Group</h4>
+        <p style="font-size:var(--text-xs);color:var(--color-text-muted);margin-bottom:var(--space-3)">Enter the 6-character invite code.</p>
+        <div class="group-input-row">
+          <input type="text" id="joinCodeInput" maxlength="6" placeholder="ABC123" autocapitalize="characters" autocomplete="off">
+          <button class="primary-btn" onclick="joinGroup()">Join</button>
+        </div>
+      </div>`;
+    return;
+  }
+
+  // User is in a group — show group info
+  try {
+    const { data: group } = await sb.from('groups')
+      .select('name, invite_code')
+      .eq('id', currentProfile.group_id)
+      .single();
+
+    const { data: members } = await sb.from('profiles')
+      .select('id, display_name, avatar_url')
+      .eq('group_id', currentProfile.group_id);
+
+    const groupName = group?.name || 'Your Group';
+    const inviteCode = group?.invite_code || '------';
+
+    let membersHtml = (members || []).map(m => {
+      const initial = (m.display_name || '?').charAt(0).toUpperCase();
+      const avatarHtml = m.avatar_url
+        ? `<img src="${m.avatar_url}" alt="">`
+        : initial;
+      const youLabel = m.id === currentUser.id ? ' <span style="color:var(--color-text-faint)">(you)</span>' : '';
+      return `<div class="group-member">
+        <div class="group-member-avatar">${avatarHtml}</div>
+        <span class="group-member-name">${m.display_name || 'User'}${youLabel}</span>
+      </div>`;
+    }).join('');
+
+    section.innerHTML = `
+      <div class="section-label">Household</div>
+      <div class="group-card">
+        <h4>${groupName}</h4>
+        <p style="font-size:var(--text-xs);color:var(--color-text-muted);margin-bottom:var(--space-2)">Invite code (tap to copy):</p>
+        <div class="invite-code-display" onclick="copyInviteCode('${inviteCode}')">
+          <span class="code">${inviteCode}</span>
+          <span class="copy-hint">Copy</span>
+        </div>
+        <p style="font-size:var(--text-xs);color:var(--color-text-muted);margin-bottom:var(--space-2)">Members (${(members || []).length}):</p>
+        ${membersHtml}
+        <div style="margin-top:var(--space-4);text-align:center">
+          <button class="danger-btn" onclick="leaveGroup()">Leave Group</button>
+        </div>
+      </div>`;
+  } catch(e) {
+    section.innerHTML = `
+      <div class="section-label">Household</div>
+      <div class="group-card"><p style="font-size:var(--text-sm);color:var(--color-text-muted)">Unable to load group info.</p></div>`;
+  }
+}
+
+function copyInviteCode(code) {
+  navigator.clipboard.writeText(code).then(() => showToast('Invite code copied!')).catch(() => {
+    // Fallback
+    const el = document.createElement('textarea');
+    el.value = code; document.body.appendChild(el); el.select();
+    document.execCommand('copy'); document.body.removeChild(el);
+    showToast('Invite code copied!');
+  });
+}
+
+// ─── Account Section in Settings ───
+function renderAccountSection() {
+  const section = document.getElementById('accountSection');
+  if (!currentUser) {
+    section.innerHTML = `
+      <div class="section-label">Account</div>
+      <div class="setting-row">
+        <span class="setting-label">Not signed in</span>
+        <button class="primary-btn" style="font-size:var(--text-xs);min-height:36px;padding:var(--space-1) var(--space-3)" onclick="signInFromSettings()">Sign In</button>
+      </div>`;
+    return;
+  }
+
+  section.innerHTML = `
+    <div class="section-label">Account</div>
+    <div class="setting-row">
+      <span class="setting-label">${currentProfile?.display_name || currentUser.email}</span>
+      <button class="danger-btn" onclick="signOut()">Sign Out</button>
+    </div>`;
+}
+
+async function signInFromSettings() {
+  const { error } = await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.origin + window.location.pathname }
+  });
+  if (error) showToast('Sign-in failed');
+}
+
+async function signOut() {
+  await sb.auth.signOut();
+  currentUser = null;
+  currentProfile = null;
+  localStorage.removeItem('repcounter_skip_signin');
+  updateUserChip();
+  showSignIn();
 }
 
 // ─── History ───
@@ -802,8 +1459,36 @@ document.getElementById('exportData').addEventListener('click', () => {
 
 renderCalendar();
 
-// ─── Cloud Sync on Load ───
-syncFromCloud();
+// ─── Auth Init ───
+(async function initAuth() {
+  // Listen for auth state changes
+  sb.auth.onAuthStateChange((event, session) => {
+    handleAuthChange(event, session);
+  });
+
+  // Check current session
+  const { data: { session } } = await sb.auth.getSession();
+  if (session && session.user) {
+    // Already logged in
+    currentUser = session.user;
+    await loadOrCreateProfile();
+    await migrateDeviceWorkouts();
+    showAppShell();
+    updateUserChip();
+    renderHouseholdSection();
+    renderAccountSection();
+    syncFromCloud();
+  } else if (localStorage.getItem('repcounter_skip_signin')) {
+    // User previously chose to skip sign-in
+    showAppShell();
+    renderHouseholdSection();
+    renderAccountSection();
+    syncFromCloud();
+  } else {
+    // Show sign-in screen
+    showSignIn();
+  }
+})();
 </script>
 </body>
 </html>
