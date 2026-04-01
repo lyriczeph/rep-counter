@@ -267,6 +267,7 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
     <div class="type-selector" id="variantSelector">
       <button class="type-btn active" data-type="standard">Standard</button>
       <button class="type-btn" data-type="eccentric">Eccentric</button>
+      <button class="type-btn" data-type="weighted">Weighted</button>
     </div>
     <div class="counter-section">
       <div class="set-info" id="setInfo">Set 1</div>
@@ -494,7 +495,7 @@ function setExercise(ex) {
   // Update variant options
   const vs = document.getElementById('variantSelector');
   if (ex === 'pullup') {
-    vs.innerHTML = '<button class="type-btn active" data-type="standard">Standard</button><button class="type-btn" data-type="eccentric">Eccentric</button>';
+    vs.innerHTML = '<button class="type-btn active" data-type="standard">Standard</button><button class="type-btn" data-type="eccentric">Eccentric</button><button class="type-btn" data-type="weighted">Weighted</button>';
   } else {
     vs.innerHTML = '<button class="type-btn active" data-type="standard">Standard</button><button class="type-btn" data-type="diamond">Diamond</button><button class="type-btn" data-type="archer">Archer</button>';
   }
@@ -556,7 +557,7 @@ function renderCurrentSets() {
   statsHtml += `<div><div class="stat-value" style="color:var(--color-text)">${state.sets.length}</div><div class="stat-label">Total sets</div></div>`;
   statsHtml += '</div>';
 
-  const variantLabel = (v) => ({ standard:'STD', eccentric:'ECC', diamond:'DIA', archer:'ARC' }[v] || v.toUpperCase());
+  const variantLabel = (v) => ({ standard:'STD', eccentric:'ECC', weighted:'WTD', diamond:'DIA', archer:'ARC' }[v] || v.toUpperCase());
 
   c.innerHTML = `
     <div class="session-card">${statsHtml}</div>
@@ -717,7 +718,7 @@ function renderHistory() {
     c.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><p>No workouts yet. Finish a workout to see your history here.</p></div>`;
     return;
   }
-  const vLabel = (v) => ({ standard:'', eccentric:' ecc', diamond:' dia', archer:' arc' }[v] || '');
+  const vLabel = (v) => ({ standard:'', eccentric:' ecc', weighted:' wtd', diamond:' dia', archer:' arc' }[v] || '');
   c.innerHTML = filtered.map((w, idx) => {
     const realIdx = state.history.indexOf(w);
     const d = new Date(w.date);
