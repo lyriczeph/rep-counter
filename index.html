@@ -1259,7 +1259,14 @@ function updateCharts() {
 
   // Daily sets bar chart on 24-hour timeline
   const todayKey = toLocalDateKey(new Date());
-  const todayWorkouts = state.history.filter(w => toLocalDateKey(w.date) === todayKey);
+  const todayWorkouts = state.history.filter(w => {
+    const wKey = toLocalDateKey(w.date);
+    return wKey === todayKey;
+  });
+  console.log('[chart] today:', todayKey, 'workouts found:', todayWorkouts.length, 'of', state.history.length, 'total');
+  if (todayWorkouts.length === 0 && state.history.length > 0) {
+    console.log('[chart] first workout date key:', toLocalDateKey(state.history[0].date), 'raw:', state.history[0].date);
+  }
   const todaySets = [];
   todayWorkouts.forEach(w => {
     const wTime = new Date(w.date);
