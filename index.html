@@ -1259,20 +1259,19 @@ function updateCharts() {
 
   // Daily sets bar chart on 24-hour timeline
   const todayKey = toLocalDateKey(new Date());
-  const todayWorkouts = state.history.filter(w => {
-    const wKey = toLocalDateKey(w.date);
-    return wKey === todayKey;
-  });
-  console.log('[chart] today:', todayKey, 'workouts found:', todayWorkouts.length, 'of', state.history.length, 'total');
-  if (todayWorkouts.length === 0 && state.history.length > 0) {
-    console.log('[chart] first workout date key:', toLocalDateKey(state.history[0].date), 'raw:', state.history[0].date);
-  }
+  const todayWorkouts = state.history.filter(w => toLocalDateKey(w.date) === todayKey);
   const todaySets = [];
   todayWorkouts.forEach(w => {
     const wTime = new Date(w.date);
     const sets = Array.isArray(w.sets) ? w.sets : (typeof w.sets === 'string' ? JSON.parse(w.sets) : []);
     sets.forEach(s => todaySets.push({ ...s, time: wTime }));
   });
+  // Debug: show date info in chart title
+  const chartTitle = document.querySelector('#panel-stats .chart-card:first-of-type h3');
+  if (chartTitle) {
+    const dbg = state.history.length > 0 ? ` [${todayKey} vs ${toLocalDateKey(state.history[0].date)}]` : ' [no data]';
+    chartTitle.textContent = 'Today\u2019s Sets' + dbg;
+  }
 
   if (dailySetsChart) dailySetsChart.destroy();
   if (todaySets.length > 0) {
