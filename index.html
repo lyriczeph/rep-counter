@@ -499,13 +499,17 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
     <!-- Leaderboard section -->
     <div id="leaderboardSection"></div>
     <div class="chart-card">
+      <h3>Today’s Sets</h3>
+      <div class="chart-wrap"><canvas id="dailySetsChart"></canvas></div>
+    </div>
+    <div class="chart-card">
       <h3>30-Day Volume</h3>
       <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
     </div>
-    <div class="chart-card">
-      <h3>30-Day Avg Reps / Set</h3>
-      <div class="chart-wrap"><canvas id="avgChart"></canvas></div>
-    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="panel" id="panel-history">
     <div class="cal-header">
       <button class="cal-nav-btn" id="calPrev" aria-label="Previous month">←</button>
       <h2 id="calTitle"></h2>
@@ -516,10 +520,6 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
       <span><span class="ex-dot pushup"></span> Push-Ups</span>
     </div>
     <div class="cal-grid" id="calGrid"></div>
-  </div>
-
-  <!-- HISTORY -->
-  <div class="panel" id="panel-history">
     <div class="history-filter">
       <button class="filter-btn active" data-filter="all">All</button>
       <button class="filter-btn" data-filter="pullup">Pull-Ups</button>
@@ -877,7 +877,7 @@ let state = Object.assign({}, defaults, { history: saved.history || [], restSeco
 // sets: [{reps, exercise, variant}]
 let restInterval = null;
 let calMonth = new Date().getMonth(), calYear = new Date().getFullYear();
-let trendChart = null, avgChart = null;
+let trendChart = null, dailySetsChart = null;
 let historyFilter = 'all';
 
 // ─── Theme ───
@@ -901,8 +901,8 @@ document.querySelectorAll('.nav-item').forEach(item => {
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     item.classList.add('active');
     document.getElementById('panel-' + item.dataset.nav).classList.add('active');
-    if (item.dataset.nav === 'history') renderHistory();
-    if (item.dataset.nav === 'stats') { renderCalendar(); updateCharts(); renderLeaderboard(); }
+    if (item.dataset.nav === 'history') { renderCalendar(); renderHistory(); }
+    if (item.dataset.nav === 'stats') { updateCharts(); renderLeaderboard(); }
     if (item.dataset.nav === 'settings') { renderHouseholdSection(); renderAccountSection(); }
   });
 });
@@ -1236,7 +1236,7 @@ function getCS(prop) { return getComputedStyle(document.documentElement).getProp
 
 function updateCharts() {
   const vol = getDailyVolume();
-  const labels = [], pullData = [], pushData = [], pullAvg = [], pushAvg = [];
+  const labels = [], pullData = [], pushData = [];
   const now = new Date();
   for (let i = 29; i >= 0; i--) {
     const d = new Date(now); d.setDate(d.getDate() - i);
@@ -1244,11 +1244,6 @@ function updateCharts() {
     labels.push(d.getDate() + '/' + (d.getMonth()+1));
     const v = vol[key] || { pull: 0, push: 0 };
     pullData.push(v.pull > 0 ? v.pull : null); pushData.push(v.push > 0 ? v.push : null);
-    const dayW = state.history.filter(w => toLocalDateKey(w.date) === key);
-    let pSets = 0, pReps = 0, uSets = 0, uReps = 0;
-    dayW.forEach(w => w.sets.forEach(s => { if (s.exercise==='pullup'){pSets++;pReps+=s.reps;} else {uSets++;uReps+=s.reps;} }));
-    pullAvg.push(pSets > 0 ? Math.round(pReps/pSets*10)/10 : null);
-    pushAvg.push(uSets > 0 ? Math.round(uReps/uSets*10)/10 : null);
   }
   const grid = getCS('--chart-grid') || '#dcd9d5';
   const textC = getCS('--color-text-muted') || '#7a7974';
@@ -1262,21 +1257,59 @@ function updateCharts() {
     }
   };
 
+  // Daily sets bar chart
+  const todayKey = toLocalDateKey(new Date());
+  const todayWorkouts = state.history.filter(w => toLocalDateKey(w.date) === todayKey);
+  const todaySets = [];
+  todayWorkouts.forEach(w => {
+    const sets = Array.isArray(w.sets) ? w.sets : (typeof w.sets === 'string' ? JSON.parse(w.sets) : []);
+    sets.forEach(s => todaySets.push(s));
+  });
+
+  const dsLabels = todaySets.map((s, i) => 'Set ' + (i + 1));
+  const dsData = todaySets.map(s => s.reps);
+  const dsColors = todaySets.map(s => s.exercise === 'pullup' ? getCS('--chart-primary') : getCS('--chart-secondary'));
+  const dsFills = todaySets.map(s => s.exercise === 'pullup' ? getCS('--chart-primary-fill') : getCS('--chart-secondary-fill'));
+
+  if (dailySetsChart) dailySetsChart.destroy();
+  if (todaySets.length > 0) {
+    dailySetsChart = new Chart(document.getElementById('dailySetsChart'), {
+      type: 'bar', data: { labels: dsLabels, datasets: [{
+        label: 'Reps', data: dsData, backgroundColor: dsColors, borderColor: dsColors, borderWidth: 1, borderRadius: 4,
+      }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false },
+          tooltip: { callbacks: { label: (ctx) => {
+            const s = todaySets[ctx.dataIndex];
+            const ex = s.exercise === 'pullup' ? 'Pull-Up' : 'Push-Up';
+            const v = ({ standard:'', eccentric:' Ecc', weighted:' Wtd', diamond:' Dia', archer:' Arc' }[s.variant] || '');
+            const w = s.weight ? ` @${s.weight}lb` : '';
+            return `${s.reps} reps — ${ex}${v}${w}`;
+          }}}
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: textC, font: { size: 10, family: 'Satoshi' } } },
+          y: { grid: { color: grid }, ticks: { color: textC, font: { size: 10, family: 'Satoshi' }, precision: 0 }, beginAtZero: true }
+        }
+      }
+    });
+  } else {
+    const ctx = document.getElementById('dailySetsChart').getContext('2d');
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    ctx.fillStyle = textC;
+    ctx.font = '14px Satoshi, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('No sets logged today yet', ctx.canvas.width / 2, ctx.canvas.height / 2);
+  }
+
+  // 30-day trend line chart
   if (trendChart) trendChart.destroy();
   trendChart = new Chart(document.getElementById('trendChart'), {
     type: 'line', data: { labels, datasets: [
       { label: 'Pull-Ups', data: pullData, borderColor: getCS('--chart-primary'), backgroundColor: getCS('--chart-primary-fill'), tension: 0.3, fill: true, pointRadius: 2, pointBackgroundColor: getCS('--chart-primary'), spanGaps: false },
       { label: 'Push-Ups', data: pushData, borderColor: getCS('--chart-secondary'), backgroundColor: getCS('--chart-secondary-fill'), tension: 0.3, fill: true, pointRadius: 2, pointBackgroundColor: getCS('--chart-secondary'), spanGaps: false },
     ] }, options: lineBaseOpts
-  });
-
-  const avgOpts = { ...lineBaseOpts };
-  if (avgChart) avgChart.destroy();
-  avgChart = new Chart(document.getElementById('avgChart'), {
-    type: 'line', data: { labels, datasets: [
-      { label: 'Pull-Ups', data: pullAvg, borderColor: getCS('--chart-primary'), backgroundColor: getCS('--chart-primary-fill'), tension: 0.3, fill: true, pointRadius: 2, spanGaps: true },
-      { label: 'Push-Ups', data: pushAvg, borderColor: getCS('--chart-secondary'), backgroundColor: getCS('--chart-secondary-fill'), tension: 0.3, fill: true, pointRadius: 2, spanGaps: true },
-    ] }, options: avgOpts
   });
 }
 
