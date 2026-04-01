@@ -368,12 +368,88 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
 </div>
 
 <script>
-// ─── Persistence ───
-function loadState() { try { const s = localStorage.getItem('repcounter_v2'); return s ? JSON.parse(s) : null; } catch(e) { return null; } }
-function saveState() { try { localStorage.setItem('repcounter_v2', JSON.stringify({ history: state.history, restSeconds: state.restSeconds, targetPullups: state.targetPullups, targetPushups: state.targetPushups })); } catch(e) {} }
+// ─── API Config ───
+const API = "__PORT_8000__".startsWith("__") ? "http://localhost:8000" : "__PORT_8000__";
+
+// ─── Persistence (cloud-backed with localStorage cache) ───
+// Local state cache (in-memory only — cloud is source of truth)
+let _localCache = null;
+function loadStateLocal() { return _localCache; }
+function saveStateLocal() { _localCache = { history: state.history, restSeconds: state.restSeconds, targetPullups: state.targetPullups, targetPushups: state.targetPushups }; }
+
+async function syncFromCloud() {
+  try {
+    const [wRes, sRes] = await Promise.all([
+      fetch(`${API}/api/workouts`),
+      fetch(`${API}/api/settings`)
+    ]);
+    if (wRes.ok) {
+      const workouts = await wRes.json();
+      if (workouts.length > 0 || state.history.length === 0) {
+        state.history = workouts;
+      }
+    }
+    if (sRes.ok) {
+      const settings = await sRes.json();
+      state.restSeconds = settings.restSeconds || 90;
+      state.targetPullups = settings.targetPullups || 10;
+      state.targetPushups = settings.targetPushups || 20;
+      document.getElementById('restTime').value = state.restSeconds;
+      document.getElementById('targetPullups').value = state.targetPullups;
+      document.getElementById('targetPushups').value = state.targetPushups;
+    }
+    saveStateLocal();
+    renderHistory();
+    renderCalendar();
+    if (document.getElementById('panel-stats').classList.contains('active')) updateCharts();
+    console.log('[sync] Loaded from cloud:', state.history.length, 'workouts');
+  } catch(e) {
+    console.warn('[sync] Cloud unavailable, using local cache:', e.message);
+  }
+}
+
+async function saveWorkoutToCloud(workout) {
+  try {
+    await fetch(`${API}/api/workouts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: workout.id,
+        date: workout.date,
+        sets: workout.sets,
+        pull_total: workout.pullTotal,
+        push_total: workout.pushTotal
+      })
+    });
+    console.log('[sync] Workout saved to cloud');
+  } catch(e) { console.warn('[sync] Failed to save workout to cloud:', e.message); }
+}
+
+async function deleteWorkoutFromCloud(workoutId) {
+  try {
+    await fetch(`${API}/api/workouts/${workoutId}`, { method: 'DELETE' });
+    console.log('[sync] Workout deleted from cloud');
+  } catch(e) { console.warn('[sync] Failed to delete from cloud:', e.message); }
+}
+
+async function saveSettingsToCloud() {
+  try {
+    await fetch(`${API}/api/settings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        rest_seconds: state.restSeconds,
+        target_pullups: state.targetPullups,
+        target_pushups: state.targetPushups
+      })
+    });
+  } catch(e) { console.warn('[sync] Failed to save settings:', e.message); }
+}
+
+function saveState() { saveStateLocal(); }
 
 const defaults = { currentReps: 0, sets: [], setNumber: 1, history: [], restSeconds: 90, targetPullups: 10, targetPushups: 20, exercise: 'pullup', variant: 'standard' };
-const saved = loadState() || {};
+const saved = loadStateLocal() || {};
 let state = Object.assign({}, defaults, { history: saved.history || [], restSeconds: saved.restSeconds || 90, targetPullups: saved.targetPullups || 10, targetPushups: saved.targetPushups || 20 });
 
 // sets: [{reps, exercise, variant}]
@@ -499,6 +575,7 @@ function saveWorkout() {
   const pullSets = state.sets.filter(s => s.exercise === 'pullup');
   const pushSets = state.sets.filter(s => s.exercise === 'pushup');
   const workout = {
+    id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2),
     date: new Date().toISOString(),
     sets: state.sets.map(s => ({ ...s })),
     pullTotal: pullSets.reduce((a,s) => a + s.reps, 0),
@@ -508,6 +585,7 @@ function saveWorkout() {
   state.sets = []; state.currentReps = 0; state.setNumber = 1;
   repDisplay.textContent = '0'; setInfo.textContent = 'Set 1';
   renderCurrentSets(); saveState();
+  saveWorkoutToCloud(workout);
 }
 
 // ─── Rest Timer ───
@@ -654,15 +732,20 @@ function renderHistory() {
   }).join('');
 }
 
-function deleteWorkout(i) { state.history.splice(i, 1); saveState(); renderHistory(); }
+function deleteWorkout(i) {
+  const workout = state.history[i];
+  const workoutId = workout && workout.id;
+  state.history.splice(i, 1); saveState(); renderHistory();
+  if (workoutId) deleteWorkoutFromCloud(workoutId);
+}
 
 // ─── Settings ───
 document.getElementById('restTime').value = state.restSeconds;
 document.getElementById('targetPullups').value = state.targetPullups;
 document.getElementById('targetPushups').value = state.targetPushups;
-document.getElementById('restTime').addEventListener('change', e => { state.restSeconds = parseInt(e.target.value)||90; saveState(); });
-document.getElementById('targetPullups').addEventListener('change', e => { state.targetPullups = parseInt(e.target.value)||10; saveState(); });
-document.getElementById('targetPushups').addEventListener('change', e => { state.targetPushups = parseInt(e.target.value)||20; saveState(); });
+document.getElementById('restTime').addEventListener('change', e => { state.restSeconds = parseInt(e.target.value)||90; saveState(); saveSettingsToCloud(); });
+document.getElementById('targetPullups').addEventListener('change', e => { state.targetPullups = parseInt(e.target.value)||10; saveState(); saveSettingsToCloud(); });
+document.getElementById('targetPushups').addEventListener('change', e => { state.targetPushups = parseInt(e.target.value)||20; saveState(); saveSettingsToCloud(); });
 document.getElementById('clearHistory').addEventListener('click', () => { if (confirm('Clear all workout history?')) { state.history = []; saveState(); renderHistory(); } });
 document.getElementById('exportData').addEventListener('click', () => {
   const blob = new Blob([JSON.stringify(state.history, null, 2)], { type: 'application/json' });
@@ -670,6 +753,9 @@ document.getElementById('exportData').addEventListener('click', () => {
 });
 
 renderCalendar();
+
+// ─── Cloud Sync on Load ───
+syncFromCloud();
 </script>
 </body>
 </html>
