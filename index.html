@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Pull-Up & Push-Up Counter</title>
+<meta name="theme-color" content="#01696f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Reps">
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; scroll-behavior: smooth; }
+
+:root, [data-theme="light"] {
+  --color-bg: #f7f6f2; --color-surface: #f9f8f5; --color-surface-2: #fbfbf9;
+  --color-surface-offset: #f3f0ec; --color-surface-offset-2: #edeae5;
+  --color-surface-dynamic: #e6e4df;
+  --color-divider: #dcd9d5; --color-border: #d4d1ca;
+  --color-text: #28251d; --color-text-muted: #7a7974; --color-text-faint: #bab9b4;
+  --color-text-inverse: #f9f8f4;
+  --color-primary: #01696f; --color-primary-hover: #0c4e54; --color-primary-active: #0f3638;
+  --color-primary-highlight: #cedcd8;
+  --color-secondary: #964219; --color-secondary-hover: #713417; --color-secondary-active: #4b2614;
+  --color-secondary-highlight: #ddcfc6;
+  --color-error: #a12c7b; --color-success: #437a22; --color-orange: #da7101;
+  --radius-sm: 0.375rem; --radius-md: 0.5rem; --radius-lg: 0.75rem; --radius-xl: 1rem; --radius-full: 9999px;
+  --shadow-sm: 0 1px 2px oklch(0.2 0.01 80 / 0.06);
+  --shadow-md: 0 4px 12px oklch(0.2 0.01 80 / 0.08);
+  --transition-interactive: 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+  --text-sm: clamp(0.875rem, 0.8rem + 0.35vw, 1rem);
+  --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+  --text-lg: clamp(1.125rem, 1rem + 0.75vw, 1.5rem);
+  --text-xl: clamp(1.5rem, 1.2rem + 1.25vw, 2.25rem);
+  --font-body: 'Satoshi', sans-serif;
+  --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem; --space-4: 1rem;
+  --space-6: 1.5rem; --space-8: 2rem; --space-10: 2.5rem; --space-12: 3rem; --space-16: 4rem;
+  --chart-primary: #01696f; --chart-primary-fill: rgba(1,105,111,0.12);
+  --chart-secondary: #964219; --chart-secondary-fill: rgba(150,66,25,0.12);
+  --chart-grid: #dcd9d5;
+}
+
+[data-theme="dark"] {
+  --color-bg: #171614; --color-surface: #1c1b19; --color-surface-2: #201f1d;
+  --color-surface-offset: #1d1c1a; --color-surface-offset-2: #22211f;
+  --color-surface-dynamic: #2d2c2a;
+  --color-divider: #262523; --color-border: #393836;
+  --color-text: #cdccca; --color-text-muted: #797876; --color-text-faint: #5a5957;
+  --color-text-inverse: #2b2a28;
+  --color-primary: #4f98a3; --color-primary-hover: #227f8b; --color-primary-active: #1a626b;
+  --color-primary-highlight: #313b3b;
+  --color-secondary: #bb653b; --color-secondary-hover: #b95525; --color-secondary-active: #993d10;
+  --color-secondary-highlight: #564942;
+  --color-error: #d163a7; --color-success: #6daa45; --color-orange: #fdab43;
+  --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.2);
+  --shadow-md: 0 4px 12px oklch(0 0 0 / 0.3);
+  --chart-primary: #4f98a3; --chart-primary-fill: rgba(79,152,163,0.15);
+  --chart-secondary: #bb653b; --chart-secondary-fill: rgba(187,101,59,0.15);
+  --chart-grid: #393836;
+}
+
+body { min-height: 100dvh; font-family: var(--font-body); font-size: var(--text-base);
+  color: var(--color-text); background: var(--color-bg); line-height: 1.6; }
+button { cursor: pointer; background: none; border: none; font: inherit; color: inherit;
+  transition: all var(--transition-interactive); }
+button:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; border-radius: var(--radius-sm); }
+input:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 1px; }
+
+.app { max-width: 480px; margin: 0 auto; padding: var(--space-4); padding-bottom: 80px; min-height: 100dvh; }
+
+header { display: flex; align-items: center; justify-content: space-between; padding: var(--space-3) 0; margin-bottom: var(--space-4); }
+header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-items: center; gap: var(--space-2); }
+
+.theme-toggle { width: 40px; height: 40px; display: grid; place-items: center; border-radius: var(--radius-full);
+  background: var(--color-surface-offset); min-height: 44px; min-width: 44px; }
+.theme-toggle:hover { background: var(--color-surface-offset-2); }
+
+/* Bottom nav */
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--color-surface);
+  border-top: 1px solid var(--color-divider); display: flex; z-index: 50;
+  padding-bottom: env(safe-area-inset-bottom, 0); }
+.nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: var(--space-2) var(--space-1); font-size: var(--text-xs); color: var(--color-text-muted);
+  min-height: 52px; justify-content: center; }
+.nav-item.active { color: var(--color-primary); }
+.nav-item:hover { color: var(--color-text); }
+.nav-item svg { width: 22px; height: 22px; }
+
+.panel { display: none; } .panel.active { display: block; }
+
+/* Exercise picker */
+.exercise-picker { display: flex; gap: var(--space-2); margin-bottom: var(--space-4); }
+.exercise-tab { flex: 1; padding: var(--space-3); border-radius: var(--radius-lg); font-size: var(--text-sm);
+  font-weight: 700; text-align: center; background: var(--color-surface); border: 2px solid transparent;
+  min-height: 44px; }
+.exercise-tab[data-ex="pullup"].active { border-color: var(--color-primary); color: var(--color-primary); background: var(--color-primary-highlight); }
+.exercise-tab[data-ex="pushup"].active { border-color: var(--color-secondary); color: var(--color-secondary); background: var(--color-secondary-highlight); }
+.exercise-tab:not(.active):hover { background: var(--color-surface-offset); }
+
+/* Variation selector */
+.type-selector { display: flex; gap: var(--space-1); background: var(--color-surface-offset);
+  border-radius: var(--radius-lg); padding: var(--space-1); margin-bottom: var(--space-6); }
+.type-btn { flex: 1; padding: var(--space-2); border-radius: calc(var(--radius-lg) - var(--space-1));
+  font-size: var(--text-sm); font-weight: 500; text-align: center; color: var(--color-text-muted); }
+.type-btn.active { background: var(--color-surface-2); color: var(--color-text); box-shadow: var(--shadow-sm); }
+
+/* Counter */
+.counter-section { display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: var(--space-6); padding: var(--space-6) 0; }
+.set-info { font-size: var(--text-sm); color: var(--color-text-muted); font-weight: 500; }
+.count-display { font-size: clamp(5rem, 15vw, 8rem); font-weight: 700; line-height: 1;
+  font-variant-numeric: tabular-nums; user-select: none; transition: transform 120ms ease; }
+.count-display.pullup { color: var(--color-primary); }
+.count-display.pushup { color: var(--color-secondary); }
+
+.counter-btn { width: clamp(130px, 36vw, 170px); height: clamp(130px, 36vw, 170px); border-radius: var(--radius-full);
+  color: var(--color-text-inverse); font-size: var(--text-xl); font-weight: 700;
+  box-shadow: var(--shadow-md); display: grid; place-items: center; -webkit-tap-highlight-color: transparent; }
+.counter-btn.pullup { background: var(--color-primary); }
+.counter-btn.pullup:hover { background: var(--color-primary-hover); transform: scale(1.03); }
+.counter-btn.pullup:active { background: var(--color-primary-active); transform: scale(0.97); }
+.counter-btn.pushup { background: var(--color-secondary); }
+.counter-btn.pushup:hover { background: var(--color-secondary-hover); transform: scale(1.03); }
+.counter-btn.pushup:active { background: var(--color-secondary-active); transform: scale(0.97); }
+
+.counter-actions { display: flex; gap: var(--space-3); align-items: center; }
+.action-btn { padding: var(--space-2) var(--space-4); border-radius: var(--radius-full); font-size: var(--text-sm);
+  font-weight: 500; background: var(--color-surface-offset); min-height: 44px; }
+.action-btn:hover { background: var(--color-surface-offset-2); }
+.action-btn.primary { color: var(--color-text-inverse); }
+.action-btn.primary.pullup { background: var(--color-primary); }
+.action-btn.primary.pullup:hover { background: var(--color-primary-hover); }
+.action-btn.primary.pushup { background: var(--color-secondary); }
+.action-btn.primary.pushup:hover { background: var(--color-secondary-hover); }
+
+/* Rest timer overlay */
+.rest-overlay { position: fixed; inset: 0; background: oklch(from var(--color-bg) l c h / 0.92); display: none;
+  place-items: center; z-index: 100; backdrop-filter: blur(8px); }
+.rest-overlay.visible { display: grid; }
+.rest-card { text-align: center; padding: var(--space-8); }
+.rest-card h2 { font-size: var(--text-lg); color: var(--color-text-muted); margin-bottom: var(--space-4); }
+.rest-timer { font-size: clamp(4rem, 12vw, 6rem); font-weight: 700; font-variant-numeric: tabular-nums; }
+.rest-card .action-btn { margin-top: var(--space-6); }
+
+/* Session */
+.session-card { background: var(--color-surface); border-radius: var(--radius-lg); padding: var(--space-4);
+  margin-bottom: var(--space-3); box-shadow: var(--shadow-sm); }
+.session-card h3 { font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+  margin-bottom: var(--space-3); color: var(--color-text-muted); }
+.session-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); text-align: center; }
+.stat-value { font-size: var(--text-lg); font-weight: 700; font-variant-numeric: tabular-nums; }
+.stat-value.pullup { color: var(--color-primary); }
+.stat-value.pushup { color: var(--color-secondary); }
+.stat-label { font-size: var(--text-xs); color: var(--color-text-muted); }
+
+.set-list { list-style: none; }
+.set-item { display: flex; justify-content: space-between; align-items: center; padding: var(--space-3) var(--space-4);
+  background: var(--color-surface); border-radius: var(--radius-md); margin-bottom: var(--space-2); font-size: var(--text-sm); }
+.set-item .set-num { color: var(--color-text-muted); font-weight: 500; display: flex; align-items: center; gap: var(--space-2); }
+.set-item .set-reps { font-weight: 700; font-variant-numeric: tabular-nums; }
+.set-item .set-type { font-size: var(--text-xs); color: var(--color-text-faint); }
+.set-item .ex-dot { width: 8px; height: 8px; border-radius: var(--radius-full); display: inline-block; flex-shrink: 0; }
+.ex-dot.pullup { background: var(--color-primary); }
+.ex-dot.pushup { background: var(--color-secondary); }
+
+/* Calendar */
+.cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-4); }
+.cal-header h2 { font-size: var(--text-sm); font-weight: 700; }
+.cal-nav-btn { width: 44px; height: 44px; border-radius: var(--radius-full); background: var(--color-surface-offset);
+  display: grid; place-items: center; }
+.cal-nav-btn:hover { background: var(--color-surface-offset-2); }
+
+.cal-legend { display: flex; gap: var(--space-4); justify-content: center; margin-bottom: var(--space-4); font-size: var(--text-xs); color: var(--color-text-muted); }
+.cal-legend span { display: flex; align-items: center; gap: var(--space-1); }
+
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-bottom: var(--space-6); }
+.cal-day-label { text-align: center; font-size: var(--text-xs); color: var(--color-text-faint); padding: var(--space-1) 0; font-weight: 500; }
+.cal-cell { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  border-radius: var(--radius-md); font-size: var(--text-xs); position: relative; gap: 1px; }
+.cal-cell.empty { opacity: 0; }
+.cal-cell.today { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+.cal-cell .cal-date { font-variant-numeric: tabular-nums; color: var(--color-text-muted); }
+.cal-cell .cal-dots { display: flex; gap: 2px; }
+.cal-cell .cal-vol { font-weight: 700; font-variant-numeric: tabular-nums; font-size: 0.6rem; }
+.cal-cell .cal-counts { display: flex; gap: 2px; align-items: center; }
+.cal-cell .cal-count { font-weight: 700; font-variant-numeric: tabular-nums; font-size: 0.55rem; line-height: 1; }
+.cal-cell .cal-count.pull { color: var(--color-primary); }
+.cal-cell .cal-count.push { color: var(--color-secondary); }
+.cal-cell .cal-sep { font-size: 0.5rem; color: var(--color-text-faint); }
+.cal-cell.has-pullup { background: var(--color-primary-highlight); }
+.cal-cell.has-both { background: linear-gradient(135deg, var(--color-primary-highlight) 50%, var(--color-secondary-highlight) 50%); }
+.cal-cell.has-pushup:not(.has-pullup) { background: var(--color-secondary-highlight); }
+
+/* Charts */
+.chart-card { background: var(--color-surface); border-radius: var(--radius-lg); padding: var(--space-4);
+  margin-bottom: var(--space-4); box-shadow: var(--shadow-sm); }
+.chart-card h3 { font-size: var(--text-sm); font-weight: 700; margin-bottom: var(--space-3); }
+.chart-wrap { position: relative; height: 200px; }
+
+/* History */
+.history-filter { display: flex; gap: var(--space-1); background: var(--color-surface-offset);
+  border-radius: var(--radius-lg); padding: var(--space-1); margin-bottom: var(--space-4); }
+.filter-btn { flex: 1; padding: var(--space-2); border-radius: calc(var(--radius-lg) - var(--space-1));
+  font-size: var(--text-sm); font-weight: 500; text-align: center; color: var(--color-text-muted); }
+.filter-btn.active { background: var(--color-surface-2); color: var(--color-text); box-shadow: var(--shadow-sm); }
+
+.history-item { background: var(--color-surface); border-radius: var(--radius-lg); padding: var(--space-4);
+  margin-bottom: var(--space-3); box-shadow: var(--shadow-sm); }
+.history-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: var(--space-2); }
+.history-date { font-size: var(--text-sm); font-weight: 700; }
+.history-total { font-size: var(--text-sm); font-weight: 700; }
+.history-total.pullup { color: var(--color-primary); }
+.history-total.pushup { color: var(--color-secondary); }
+.history-ex-label { font-size: var(--text-xs); font-weight: 600; display: inline-flex; align-items: center; gap: var(--space-1); margin-bottom: var(--space-1); }
+.history-sets { font-size: var(--text-xs); color: var(--color-text-muted); }
+.history-delete { font-size: var(--text-xs); color: var(--color-text-faint); margin-top: var(--space-2); }
+.history-delete:hover { color: var(--color-error); }
+
+.empty-state { text-align: center; padding: var(--space-16) var(--space-4); color: var(--color-text-muted); }
+.empty-state svg { width: 48px; height: 48px; margin: 0 auto var(--space-4); color: var(--color-text-faint); }
+.empty-state p { font-size: var(--text-sm); max-width: 36ch; margin: 0 auto; }
+
+/* Settings */
+.setting-row { display: flex; justify-content: space-between; align-items: center; padding: var(--space-4);
+  background: var(--color-surface); border-radius: var(--radius-md); margin-bottom: var(--space-2); }
+.setting-label { font-size: var(--text-sm); font-weight: 500; }
+.setting-control input { width: 60px; text-align: center; padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-bg);
+  font: inherit; font-size: var(--text-sm); font-variant-numeric: tabular-nums; color: var(--color-text); }
+.section-label { font-size: var(--text-xs); font-weight: 700; color: var(--color-text-muted);
+  text-transform: uppercase; letter-spacing: 0.05em; margin: var(--space-6) 0 var(--space-2); }
+.section-label:first-child { margin-top: 0; }
+.danger-btn { padding: var(--space-2) var(--space-4); border-radius: var(--radius-full); font-size: var(--text-sm);
+  font-weight: 500; color: var(--color-error); background: var(--color-surface); }
+.danger-btn:hover { background: var(--color-surface-offset); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <line x1="2" y1="6" x2="22" y2="6"/><line x1="4" y1="3" x2="4" y2="9"/><line x1="20" y1="3" x2="20" y2="9"/>
+        <line x1="12" y1="6" x2="12" y2="14"/><circle cx="12" cy="16" r="2"/>
+      </svg>
+      Rep Counter
+    </h1>
+    <button class="theme-toggle" data-theme-toggle aria-label="Toggle theme">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </header>
+
+  <!-- WORKOUT -->
+  <div class="panel active" id="panel-workout">
+    <div class="exercise-picker">
+      <button class="exercise-tab active" data-ex="pullup"><span class="ex-dot pullup"></span> Pull-Ups</button>
+      <button class="exercise-tab" data-ex="pushup"><span class="ex-dot pushup"></span> Push-Ups</button>
+    </div>
+    <div class="type-selector" id="variantSelector">
+      <button class="type-btn active" data-type="standard">Standard</button>
+      <button class="type-btn" data-type="eccentric">Eccentric</button>
+    </div>
+    <div class="counter-section">
+      <div class="set-info" id="setInfo">Set 1</div>
+      <div class="count-display pullup" id="repCount">0</div>
+      <button class="counter-btn pullup" id="addRep" aria-label="Add rep">TAP</button>
+      <div class="counter-actions">
+        <button class="action-btn" id="undoRep">Undo</button>
+        <button class="action-btn primary pullup" id="finishSet">Finish Set</button>
+      </div>
+    </div>
+    <div id="currentSets"></div>
+  </div>
+
+  <!-- STATS -->
+  <div class="panel" id="panel-stats">
+    <div class="cal-header">
+      <button class="cal-nav-btn" id="calPrev" aria-label="Previous month">←</button>
+      <h2 id="calTitle"></h2>
+      <button class="cal-nav-btn" id="calNext" aria-label="Next month">→</button>
+    </div>
+    <div class="cal-legend">
+      <span><span class="ex-dot pullup"></span> Pull-Ups</span>
+      <span><span class="ex-dot pushup"></span> Push-Ups</span>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="chart-card">
+      <h3>30-Day Volume</h3>
+      <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>30-Day Avg Reps / Set</h3>
+      <div class="chart-wrap"><canvas id="avgChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="panel" id="panel-history">
+    <div class="history-filter">
+      <button class="filter-btn active" data-filter="all">All</button>
+      <button class="filter-btn" data-filter="pullup">Pull-Ups</button>
+      <button class="filter-btn" data-filter="pushup">Push-Ups</button>
+    </div>
+    <div id="historyList"></div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="panel" id="panel-settings">
+    <div class="section-label">Timer</div>
+    <div class="setting-row">
+      <span class="setting-label">Rest timer (seconds)</span>
+      <div class="setting-control"><input type="number" id="restTime" value="90" min="0" max="600" step="15"></div>
+    </div>
+    <div class="section-label">Goals</div>
+    <div class="setting-row">
+      <span class="setting-label">Pull-up target / set</span>
+      <div class="setting-control"><input type="number" id="targetPullups" value="10" min="1" max="100"></div>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">Push-up target / set</span>
+      <div class="setting-control"><input type="number" id="targetPushups" value="20" min="1" max="100"></div>
+    </div>
+    <div class="section-label">Data</div>
+    <div class="setting-row">
+      <span class="setting-label">Export workout data</span>
+      <button class="action-btn" id="exportData" style="font-size:var(--text-xs)">Export JSON</button>
+    </div>
+    <div style="text-align:center;margin-top:var(--space-6)">
+      <button class="danger-btn" id="clearHistory">Clear all history</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom nav -->
+<nav class="bottom-nav">
+  <button class="nav-item active" data-nav="workout" aria-label="Workout">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+    Count
+  </button>
+  <button class="nav-item" data-nav="stats" aria-label="Stats">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    Stats
+  </button>
+  <button class="nav-item" data-nav="history" aria-label="History">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    History
+  </button>
+  <button class="nav-item" data-nav="settings" aria-label="Settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+    Settings
+  </button>
+</nav>
+
+<!-- Rest timer overlay -->
+<div class="rest-overlay" id="restOverlay">
+  <div class="rest-card">
+    <h2>Rest</h2>
+    <div class="rest-timer" id="restDisplay">1:30</div>
+    <button class="action-btn" id="skipRest">Skip</button>
+  </div>
+</div>
+
+<script>
+// ─── Persistence ───
+function loadState() { try { const s = localStorage.getItem('repcounter_v2'); return s ? JSON.parse(s) : null; } catch(e) { return null; } }
+function saveState() { try { localStorage.setItem('repcounter_v2', JSON.stringify({ history: state.history, restSeconds: state.restSeconds, targetPullups: state.targetPullups, targetPushups: state.targetPushups })); } catch(e) {} }
+
+const defaults = { currentReps: 0, sets: [], setNumber: 1, history: [], restSeconds: 90, targetPullups: 10, targetPushups: 20, exercise: 'pullup', variant: 'standard' };
+const saved = loadState() || {};
+let state = Object.assign({}, defaults, { history: saved.history || [], restSeconds: saved.restSeconds || 90, targetPullups: saved.targetPullups || 10, targetPushups: saved.targetPushups || 20 });
+
+// sets: [{reps, exercise, variant}]
+let restInterval = null;
+let calMonth = new Date().getMonth(), calYear = new Date().getFullYear();
+let trendChart = null, avgChart = null;
+let historyFilter = 'all';
+
+// ─── Theme ───
+(function(){
+  const t=document.querySelector('[data-theme-toggle]'), r=document.documentElement;
+  let d=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';
+  r.setAttribute('data-theme',d);
+  t.addEventListener('click',()=>{
+    d=d==='dark'?'light':'dark'; r.setAttribute('data-theme',d);
+    t.innerHTML=d==='dark'
+      ?'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>'
+      :'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+    if (document.getElementById('panel-stats').classList.contains('active')) updateCharts();
+  });
+})();
+
+// ─── Navigation ───
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    item.classList.add('active');
+    document.getElementById('panel-' + item.dataset.nav).classList.add('active');
+    if (item.dataset.nav === 'history') renderHistory();
+    if (item.dataset.nav === 'stats') { renderCalendar(); updateCharts(); }
+  });
+});
+
+// ─── Exercise picker ───
+function setExercise(ex) {
+  state.exercise = ex;
+  document.querySelectorAll('.exercise-tab').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.exercise-tab[data-ex="${ex}"]`).classList.add('active');
+  // Update colors
+  document.getElementById('repCount').className = 'count-display ' + ex;
+  document.getElementById('addRep').className = 'counter-btn ' + ex;
+  document.getElementById('finishSet').className = 'action-btn primary ' + ex;
+  // Update variant options
+  const vs = document.getElementById('variantSelector');
+  if (ex === 'pullup') {
+    vs.innerHTML = '<button class="type-btn active" data-type="standard">Standard</button><button class="type-btn" data-type="eccentric">Eccentric</button>';
+  } else {
+    vs.innerHTML = '<button class="type-btn active" data-type="standard">Standard</button><button class="type-btn" data-type="diamond">Diamond</button><button class="type-btn" data-type="archer">Archer</button>';
+  }
+  state.variant = 'standard';
+  vs.querySelectorAll('.type-btn').forEach(b => b.addEventListener('click', () => {
+    vs.querySelectorAll('.type-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active'); state.variant = b.dataset.type;
+  }));
+  // Rest timer color
+  document.querySelector('.rest-timer').style.color = ex === 'pullup' ? 'var(--color-primary)' : 'var(--color-secondary)';
+}
+
+document.querySelectorAll('.exercise-tab').forEach(btn => {
+  btn.addEventListener('click', () => setExercise(btn.dataset.ex));
+});
+
+// ─── Variant selector (initial) ───
+document.querySelectorAll('.type-btn').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('#variantSelector .type-btn').forEach(x => x.classList.remove('active'));
+  b.classList.add('active'); state.variant = b.dataset.type;
+}));
+
+// ─── Counter ───
+const repDisplay = document.getElementById('repCount');
+const setInfo = document.getElementById('setInfo');
+
+document.getElementById('addRep').addEventListener('click', () => {
+  state.currentReps++;
+  repDisplay.textContent = state.currentReps;
+  repDisplay.style.transform = 'scale(1.08)';
+  setTimeout(() => repDisplay.style.transform = 'scale(1)', 120);
+});
+
+document.getElementById('undoRep').addEventListener('click', () => {
+  if (state.currentReps > 0) { state.currentReps--; repDisplay.textContent = state.currentReps; }
+});
+
+document.getElementById('finishSet').addEventListener('click', () => {
+  if (state.currentReps === 0) return;
+  state.sets.push({ reps: state.currentReps, exercise: state.exercise, variant: state.variant });
+  state.currentReps = 0; state.setNumber++;
+  repDisplay.textContent = '0';
+  setInfo.textContent = 'Set ' + state.setNumber;
+  renderCurrentSets();
+  if (state.restSeconds > 0) startRest();
+});
+
+function renderCurrentSets() {
+  const c = document.getElementById('currentSets');
+  if (state.sets.length === 0) { c.innerHTML = ''; return; }
+  const pullSets = state.sets.filter(s => s.exercise === 'pullup');
+  const pushSets = state.sets.filter(s => s.exercise === 'pushup');
+  const pullTotal = pullSets.reduce((a, s) => a + s.reps, 0);
+  const pushTotal = pushSets.reduce((a, s) => a + s.reps, 0);
+
+  let statsHtml = '<div class="session-stats">';
+  if (pullSets.length > 0) statsHtml += `<div><div class="stat-value pullup">${pullTotal}</div><div class="stat-label">Pull-ups</div></div>`;
+  if (pushSets.length > 0) statsHtml += `<div><div class="stat-value pushup">${pushTotal}</div><div class="stat-label">Push-ups</div></div>`;
+  statsHtml += `<div><div class="stat-value" style="color:var(--color-text)">${state.sets.length}</div><div class="stat-label">Total sets</div></div>`;
+  statsHtml += '</div>';
+
+  const variantLabel = (v) => ({ standard:'STD', eccentric:'ECC', diamond:'DIA', archer:'ARC' }[v] || v.toUpperCase());
+
+  c.innerHTML = `
+    <div class="session-card">${statsHtml}</div>
+    <ul class="set-list">${state.sets.map((s, i) =>
+      `<li class="set-item"><span class="set-num"><span class="ex-dot ${s.exercise}"></span> Set ${i+1} <span class="set-type">${variantLabel(s.variant)}</span></span><span class="set-reps">${s.reps}</span></li>`
+    ).reverse().join('')}</ul>
+    <div style="padding:var(--space-3) 0;text-align:center">
+      <button class="action-btn primary pullup" onclick="saveWorkout()">Save Workout</button>
+    </div>`;
+}
+
+function saveWorkout() {
+  if (state.sets.length === 0) return;
+  const pullSets = state.sets.filter(s => s.exercise === 'pullup');
+  const pushSets = state.sets.filter(s => s.exercise === 'pushup');
+  const workout = {
+    date: new Date().toISOString(),
+    sets: state.sets.map(s => ({ ...s })),
+    pullTotal: pullSets.reduce((a,s) => a + s.reps, 0),
+    pushTotal: pushSets.reduce((a,s) => a + s.reps, 0),
+  };
+  state.history.unshift(workout);
+  state.sets = []; state.currentReps = 0; state.setNumber = 1;
+  repDisplay.textContent = '0'; setInfo.textContent = 'Set 1';
+  renderCurrentSets(); saveState();
+}
+
+// ─── Rest Timer ───
+function startRest() {
+  let remaining = state.restSeconds;
+  const overlay = document.getElementById('restOverlay');
+  const display = document.getElementById('restDisplay');
+  overlay.classList.add('visible');
+  updateRestDisplay(remaining, display);
+  restInterval = setInterval(() => { remaining--; updateRestDisplay(remaining, display); if (remaining <= 0) endRest(); }, 1000);
+}
+function updateRestDisplay(s, el) { el.textContent = Math.floor(s/60) + ':' + String(s%60).padStart(2,'0'); }
+function endRest() { clearInterval(restInterval); document.getElementById('restOverlay').classList.remove('visible'); }
+document.getElementById('skipRest').addEventListener('click', endRest);
+
+// ─── Calendar ───
+function getDateKey(d) { return d.toISOString().slice(0,10); }
+function getDailyVolume() {
+  const vol = {};
+  state.history.forEach(w => {
+    const key = w.date.slice(0,10);
+    if (!vol[key]) vol[key] = { pull: 0, push: 0 };
+    vol[key].pull += w.pullTotal || 0;
+    vol[key].push += w.pushTotal || 0;
+  });
+  return vol;
+}
+
+function renderCalendar() {
+  const vol = getDailyVolume();
+  document.getElementById('calTitle').textContent = ['January','February','March','April','May','June','July','August','September','October','November','December'][calMonth] + ' ' + calYear;
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const todayKey = getDateKey(new Date());
+  let html = ['Su','Mo','Tu','We','Th','Fr','Sa'].map(d => `<div class="cal-day-label">${d}</div>`).join('');
+  for (let i = 0; i < firstDay; i++) html += '<div class="cal-cell empty"></div>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const key = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const v = vol[key] || { pull: 0, push: 0 };
+    const hasPull = v.pull > 0, hasPush = v.push > 0;
+    const cls = ['cal-cell', hasPull ? 'has-pullup' : '', hasPush ? 'has-pushup' : '', (hasPull && hasPush) ? 'has-both' : '', key === todayKey ? 'today' : ''].filter(Boolean).join(' ');
+    const hasSome = v.pull + v.push > 0;
+    let countHtml = '';
+    if (v.pull > 0 && v.push > 0) {
+      countHtml = `<span class="cal-counts"><span class="cal-count pull">${v.pull}</span><span class="cal-sep">/</span><span class="cal-count push">${v.push}</span></span>`;
+    } else if (v.pull > 0) {
+      countHtml = `<span class="cal-count pull">${v.pull}</span>`;
+    } else if (v.push > 0) {
+      countHtml = `<span class="cal-count push">${v.push}</span>`;
+    }
+    html += `<div class="${cls}"><span class="cal-date">${d}</span>${countHtml}</div>`;
+  }
+  document.getElementById('calGrid').innerHTML = html;
+}
+
+document.getElementById('calPrev').addEventListener('click', () => { calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } renderCalendar(); });
+document.getElementById('calNext').addEventListener('click', () => { calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } renderCalendar(); });
+
+// ─── Charts ───
+function getCS(prop) { return getComputedStyle(document.documentElement).getPropertyValue(prop).trim(); }
+
+function updateCharts() {
+  const vol = getDailyVolume();
+  const labels = [], pullData = [], pushData = [], pullAvg = [], pushAvg = [];
+  const now = new Date();
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(now); d.setDate(d.getDate() - i);
+    const key = getDateKey(d);
+    labels.push(d.getDate() + '/' + (d.getMonth()+1));
+    const v = vol[key] || { pull: 0, push: 0 };
+    pullData.push(v.pull > 0 ? v.pull : null); pushData.push(v.push > 0 ? v.push : null);
+    // avg per set
+    const dayW = state.history.filter(w => w.date.slice(0,10) === key);
+    let pSets = 0, pReps = 0, uSets = 0, uReps = 0;
+    dayW.forEach(w => w.sets.forEach(s => { if (s.exercise==='pullup'){pSets++;pReps+=s.reps;} else {uSets++;uReps+=s.reps;} }));
+    pullAvg.push(pSets > 0 ? Math.round(pReps/pSets*10)/10 : null);
+    pushAvg.push(uSets > 0 ? Math.round(uReps/uSets*10)/10 : null);
+  }
+  const grid = getCS('--chart-grid') || '#dcd9d5';
+  const textC = getCS('--color-text-muted') || '#7a7974';
+  // chart opts defined inline below
+
+  const lineBaseOpts = {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: true, labels: { boxWidth: 10, padding: 12, font: { size: 11, family: 'Satoshi' }, color: textC } } },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: textC, font: { size: 10, family: 'Satoshi' }, maxRotation: 0, maxTicksLimit: 7 } },
+      y: { grid: { color: grid }, ticks: { color: textC, font: { size: 10, family: 'Satoshi' }, precision: 0 }, beginAtZero: true }
+    }
+  };
+
+  if (trendChart) trendChart.destroy();
+  trendChart = new Chart(document.getElementById('trendChart'), {
+    type: 'line', data: { labels, datasets: [
+      { label: 'Pull-Ups', data: pullData, borderColor: getCS('--chart-primary'), backgroundColor: getCS('--chart-primary-fill'), tension: 0.3, fill: true, pointRadius: 2, pointBackgroundColor: getCS('--chart-primary'), spanGaps: false },
+      { label: 'Push-Ups', data: pushData, borderColor: getCS('--chart-secondary'), backgroundColor: getCS('--chart-secondary-fill'), tension: 0.3, fill: true, pointRadius: 2, pointBackgroundColor: getCS('--chart-secondary'), spanGaps: false },
+    ] }, options: lineBaseOpts
+  });
+
+  const avgOpts = { ...lineBaseOpts };
+  if (avgChart) avgChart.destroy();
+  avgChart = new Chart(document.getElementById('avgChart'), {
+    type: 'line', data: { labels, datasets: [
+      { label: 'Pull-Ups', data: pullAvg, borderColor: getCS('--chart-primary'), backgroundColor: getCS('--chart-primary-fill'), tension: 0.3, fill: true, pointRadius: 2, spanGaps: true },
+      { label: 'Push-Ups', data: pushAvg, borderColor: getCS('--chart-secondary'), backgroundColor: getCS('--chart-secondary-fill'), tension: 0.3, fill: true, pointRadius: 2, spanGaps: true },
+    ] }, options: avgOpts
+  });
+}
+
+// ─── History ───
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active'); historyFilter = btn.dataset.filter; renderHistory();
+  });
+});
+
+function renderHistory() {
+  const c = document.getElementById('historyList');
+  let filtered = state.history;
+  if (historyFilter === 'pullup') filtered = filtered.filter(w => w.pullTotal > 0);
+  if (historyFilter === 'pushup') filtered = filtered.filter(w => w.pushTotal > 0);
+  if (filtered.length === 0) {
+    c.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><p>No workouts yet. Finish a workout to see your history here.</p></div>`;
+    return;
+  }
+  const vLabel = (v) => ({ standard:'', eccentric:' ecc', diamond:' dia', archer:' arc' }[v] || '');
+  c.innerHTML = filtered.map((w, idx) => {
+    const realIdx = state.history.indexOf(w);
+    const d = new Date(w.date);
+    const dateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    let body = '';
+    if (w.pullTotal > 0) {
+      const ps = w.sets.filter(s => s.exercise === 'pullup');
+      body += `<div class="history-ex-label"><span class="ex-dot pullup"></span> Pull-Ups — <span class="history-total pullup">${w.pullTotal} reps</span></div>
+        <div class="history-sets">${ps.map((s,j) => `Set ${j+1}: ${s.reps}${vLabel(s.variant)}`).join(' · ')}</div>`;
+    }
+    if (w.pushTotal > 0) {
+      const us = w.sets.filter(s => s.exercise === 'pushup');
+      body += `<div class="history-ex-label" style="margin-top:var(--space-2)"><span class="ex-dot pushup"></span> Push-Ups — <span class="history-total pushup">${w.pushTotal} reps</span></div>
+        <div class="history-sets">${us.map((s,j) => `Set ${j+1}: ${s.reps}${vLabel(s.variant)}`).join(' · ')}</div>`;
+    }
+    return `<div class="history-item"><div class="history-header"><span class="history-date">${dateStr}</span></div>${body}<button class="history-delete" onclick="deleteWorkout(${realIdx})">Delete</button></div>`;
+  }).join('');
+}
+
+function deleteWorkout(i) { state.history.splice(i, 1); saveState(); renderHistory(); }
+
+// ─── Settings ───
+document.getElementById('restTime').value = state.restSeconds;
+document.getElementById('targetPullups').value = state.targetPullups;
+document.getElementById('targetPushups').value = state.targetPushups;
+document.getElementById('restTime').addEventListener('change', e => { state.restSeconds = parseInt(e.target.value)||90; saveState(); });
+document.getElementById('targetPullups').addEventListener('change', e => { state.targetPullups = parseInt(e.target.value)||10; saveState(); });
+document.getElementById('targetPushups').addEventListener('change', e => { state.targetPushups = parseInt(e.target.value)||20; saveState(); });
+document.getElementById('clearHistory').addEventListener('click', () => { if (confirm('Clear all workout history?')) { state.history = []; saveState(); renderHistory(); } });
+document.getElementById('exportData').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(state.history, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'rep-counter-data.json'; a.click();
+});
+
+renderCalendar();
+</script>
+</body>
+</html>
