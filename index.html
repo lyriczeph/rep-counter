@@ -108,6 +108,18 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
   font-size: var(--text-sm); font-weight: 500; text-align: center; color: var(--color-text-muted); }
 .type-btn.active { background: var(--color-surface-2); color: var(--color-text); box-shadow: var(--shadow-sm); }
 
+/* Weight input */
+.weight-input { display: none; align-items: center; justify-content: center; gap: var(--space-2);
+  margin-bottom: var(--space-2); }
+.weight-input.visible { display: flex; }
+.weight-input label { font-size: var(--text-sm); font-weight: 500; color: var(--color-text-muted); }
+.weight-input .weight-adjust { width: 40px; height: 40px; border-radius: var(--radius-full);
+  background: var(--color-surface-offset); display: grid; place-items: center;
+  font-size: var(--text-base); font-weight: 700; min-height: 44px; min-width: 44px; }
+.weight-input .weight-adjust:hover { background: var(--color-surface-offset-2); }
+.weight-input .weight-value { font-size: var(--text-lg); font-weight: 700; font-variant-numeric: tabular-nums;
+  min-width: 60px; text-align: center; color: var(--color-primary); }
+
 /* Counter */
 .counter-section { display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: var(--space-6); padding: var(--space-6) 0; }
@@ -268,6 +280,11 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
       <button class="type-btn active" data-type="standard">Standard</button>
       <button class="type-btn" data-type="eccentric">Eccentric</button>
       <button class="type-btn" data-type="weighted">Weighted</button>
+    </div>
+    <div class="weight-input" id="weightInput">
+      <button class="weight-adjust" id="weightDown">−</button>
+      <span class="weight-value" id="weightValue">10 lb</span>
+      <button class="weight-adjust" id="weightUp">+</button>
     </div>
     <div class="counter-section">
       <div class="set-info" id="setInfo">Set 1</div>
@@ -447,7 +464,7 @@ async function saveSettingsToCloud() {
 
 function saveState() { saveStateLocal(); }
 
-const defaults = { currentReps: 0, sets: [], setNumber: 1, history: [], restSeconds: 90, targetPullups: 10, targetPushups: 20, exercise: 'pullup', variant: 'standard' };
+const defaults = { currentReps: 0, sets: [], setNumber: 1, history: [], restSeconds: 90, targetPullups: 10, targetPushups: 20, exercise: 'pullup', variant: 'standard', currentWeight: 10 };
 const saved = loadStateLocal() || {};
 let state = Object.assign({}, defaults, { history: saved.history || [], restSeconds: saved.restSeconds || 90, targetPullups: saved.targetPullups || 10, targetPushups: saved.targetPushups || 20 });
 
@@ -503,9 +520,12 @@ function setExercise(ex) {
   vs.querySelectorAll('.type-btn').forEach(b => b.addEventListener('click', () => {
     vs.querySelectorAll('.type-btn').forEach(x => x.classList.remove('active'));
     b.classList.add('active'); state.variant = b.dataset.type;
+    updateWeightVisibility();
   }));
   // Rest timer color
   document.querySelector('.rest-timer').style.color = ex === 'pullup' ? 'var(--color-primary)' : 'var(--color-secondary)';
+  // Show/hide weight input
+  updateWeightVisibility();
 }
 
 document.querySelectorAll('.exercise-tab').forEach(btn => {
@@ -517,6 +537,23 @@ document.querySelectorAll('.type-btn').forEach(b => b.addEventListener('click', 
   document.querySelectorAll('#variantSelector .type-btn').forEach(x => x.classList.remove('active'));
   b.classList.add('active'); state.variant = b.dataset.type;
 }));
+
+// ─── Weight Input ───
+function updateWeightVisibility() {
+  const el = document.getElementById('weightInput');
+  if (state.variant === 'weighted') { el.classList.add('visible'); } else { el.classList.remove('visible'); }
+}
+function renderWeight() {
+  document.getElementById('weightValue').textContent = state.currentWeight + ' lb';
+}
+document.getElementById('weightUp').addEventListener('click', () => {
+  state.currentWeight = Math.min(state.currentWeight + 5, 200);
+  renderWeight();
+});
+document.getElementById('weightDown').addEventListener('click', () => {
+  state.currentWeight = Math.max(state.currentWeight - 5, 5);
+  renderWeight();
+});
 
 // ─── Counter ───
 const repDisplay = document.getElementById('repCount');
@@ -535,7 +572,9 @@ document.getElementById('undoRep').addEventListener('click', () => {
 
 document.getElementById('finishSet').addEventListener('click', () => {
   if (state.currentReps === 0) return;
-  state.sets.push({ reps: state.currentReps, exercise: state.exercise, variant: state.variant });
+  const setData = { reps: state.currentReps, exercise: state.exercise, variant: state.variant };
+  if (state.variant === 'weighted') setData.weight = state.currentWeight;
+  state.sets.push(setData);
   state.currentReps = 0; state.setNumber++;
   repDisplay.textContent = '0';
   setInfo.textContent = 'Set ' + state.setNumber;
@@ -558,11 +597,12 @@ function renderCurrentSets() {
   statsHtml += '</div>';
 
   const variantLabel = (v) => ({ standard:'STD', eccentric:'ECC', weighted:'WTD', diamond:'DIA', archer:'ARC' }[v] || v.toUpperCase());
+  const weightLabel = (s) => s.weight ? ` @ ${s.weight}lb` : '';
 
   c.innerHTML = `
     <div class="session-card">${statsHtml}</div>
     <ul class="set-list">${state.sets.map((s, i) =>
-      `<li class="set-item"><span class="set-num"><span class="ex-dot ${s.exercise}"></span> Set ${i+1} <span class="set-type">${variantLabel(s.variant)}</span></span><span class="set-reps">${s.reps}</span></li>`
+      `<li class="set-item"><span class="set-num"><span class="ex-dot ${s.exercise}"></span> Set ${i+1} <span class="set-type">${variantLabel(s.variant)}${weightLabel(s)}</span></span><span class="set-reps">${s.reps}</span></li>`
     ).reverse().join('')}</ul>
     <div style="padding:var(--space-3) 0;text-align:center">
       <button class="action-btn primary pullup" onclick="saveWorkout()">Save Workout</button>
@@ -719,6 +759,7 @@ function renderHistory() {
     return;
   }
   const vLabel = (v) => ({ standard:'', eccentric:' ecc', weighted:' wtd', diamond:' dia', archer:' arc' }[v] || '');
+  const wLabel = (s) => s.weight ? ` @${s.weight}lb` : '';
   c.innerHTML = filtered.map((w, idx) => {
     const realIdx = state.history.indexOf(w);
     const d = new Date(w.date);
@@ -727,12 +768,12 @@ function renderHistory() {
     if (w.pullTotal > 0) {
       const ps = w.sets.filter(s => s.exercise === 'pullup');
       body += `<div class="history-ex-label"><span class="ex-dot pullup"></span> Pull-Ups — <span class="history-total pullup">${w.pullTotal} reps</span></div>
-        <div class="history-sets">${ps.map((s,j) => `Set ${j+1}: ${s.reps}${vLabel(s.variant)}`).join(' · ')}</div>`;
+        <div class="history-sets">${ps.map((s,j) => `Set ${j+1}: ${s.reps}${vLabel(s.variant)}${wLabel(s)}`).join(' · ')}</div>`;
     }
     if (w.pushTotal > 0) {
       const us = w.sets.filter(s => s.exercise === 'pushup');
       body += `<div class="history-ex-label" style="margin-top:var(--space-2)"><span class="ex-dot pushup"></span> Push-Ups — <span class="history-total pushup">${w.pushTotal} reps</span></div>
-        <div class="history-sets">${us.map((s,j) => `Set ${j+1}: ${s.reps}${vLabel(s.variant)}`).join(' · ')}</div>`;
+        <div class="history-sets">${us.map((s,j) => `Set ${j+1}: ${s.reps}${vLabel(s.variant)}${wLabel(s)}`).join(' · ')}</div>`;
     }
     return `<div class="history-item"><div class="history-header"><span class="history-date">${dateStr}</span></div>${body}<button class="history-delete" onclick="deleteWorkout(${realIdx})">Delete</button></div>`;
   }).join('');
