@@ -500,7 +500,7 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
     <div id="leaderboardSection"></div>
     <div class="chart-card">
       <h3>Today’s Sets</h3>
-      <div class="chart-wrap"><canvas id="dailySetsChart"></canvas></div>
+      <div class="chart-wrap" style="height:240px"><canvas id="dailySetsChart"></canvas></div>
     </div>
     <div class="chart-card">
       <h3>30-Day Volume</h3>
@@ -1278,8 +1278,8 @@ function updateCharts() {
 
     dailySetsChart = new Chart(document.getElementById('dailySetsChart'), {
       type: 'bar', data: { datasets: [
-        { label: 'Pull-Ups', data: pullPoints, backgroundColor: getCS('--color-primary'), borderColor: getCS('--color-primary'), borderWidth: 2, borderRadius: 6, barPercentage: 0.9, categoryPercentage: 0.9, minBarLength: 6 },
-        { label: 'Push-Ups', data: pushPoints, backgroundColor: getCS('--color-secondary'), borderColor: getCS('--color-secondary'), borderWidth: 2, borderRadius: 6, barPercentage: 0.9, categoryPercentage: 0.9, minBarLength: 6 },
+        { label: 'Pull-Ups', data: pullPoints, backgroundColor: 'rgba(1,105,111,0.85)', borderColor: '#01696f', borderWidth: 2, borderRadius: 6, barPercentage: 1.0, categoryPercentage: 1.0, minBarLength: 8, maxBarThickness: 28 },
+        { label: 'Push-Ups', data: pushPoints, backgroundColor: 'rgba(150,66,25,0.85)', borderColor: '#964219', borderWidth: 2, borderRadius: 6, barPercentage: 1.0, categoryPercentage: 1.0, minBarLength: 8, maxBarThickness: 28 },
       ] },
       options: {
         responsive: true, maintainAspectRatio: false,
@@ -1705,7 +1705,7 @@ function renderHistory() {
   c.innerHTML = filtered.map((w, idx) => {
     const realIdx = state.history.indexOf(w);
     const d = new Date(w.date);
-    const dateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    const dateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + ' · ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
     let body = '';
     if (w.pullTotal > 0) {
       const ps = w.sets.filter(s => s.exercise === 'pullup');
