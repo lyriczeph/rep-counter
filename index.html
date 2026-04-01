@@ -143,10 +143,10 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
 
 /* Bubble timeline */
 .bubble-timeline { padding: var(--space-2) 0; }
-.bubble-timeline .bt-row { display: flex; align-items: center; min-height: 70px; margin-bottom: var(--space-2); }
+.bubble-timeline .bt-row { display: flex; align-items: center; min-height: 50px; margin-bottom: var(--space-2); }
 .bubble-timeline .bt-label { width: 48px; flex-shrink: 0; font-size: 0.65rem; font-weight: 700; color: var(--color-text-muted);
   text-transform: uppercase; letter-spacing: 0.03em; line-height: 1.2; }
-.bubble-timeline .bt-track { flex: 1; position: relative; height: 70px; }
+.bubble-timeline .bt-track { flex: 1; position: relative; height: 50px; }
 .bubble-timeline .bt-bubble { position: absolute; border-radius: var(--radius-full); display: grid; place-items: center;
   font-weight: 700; font-variant-numeric: tabular-nums; color: var(--color-text-inverse);
   transform: translateX(-50%); transition: transform 120ms ease; box-shadow: var(--shadow-sm); }
@@ -1278,7 +1278,7 @@ function renderBubbleTimeline() {
   // Find max reps for sizing
   const allTotals = [...pullBubbles, ...pushBubbles].map(b => b.total);
   const maxTotal = Math.max(...allTotals, 1);
-  const MIN_SIZE = 32, MAX_SIZE = 62;
+  const MIN_SIZE = 24, MAX_SIZE = 42;
 
   function bubbleSize(total) {
     const ratio = total / maxTotal;
@@ -1286,9 +1286,9 @@ function renderBubbleTimeline() {
   }
 
   function fontSize(size) {
+    if (size <= 28) return '0.6rem';
     if (size <= 36) return '0.7rem';
-    if (size <= 48) return '0.85rem';
-    return '1rem';
+    return '0.8rem';
   }
 
   // Time range: 5am to 11pm
@@ -1310,7 +1310,7 @@ function renderBubbleTimeline() {
       const left = timeToPercent(b.hours);
       const fs = fontSize(size);
       const title = `${formatTime(b.time)}: ${b.total} reps (${b.sets.length} set${b.sets.length > 1 ? 's' : ''})`;
-      return `<div class="bt-bubble ${type}" style="left:${left}%;width:${size}px;height:${size}px;top:${(70-size)/2}px;font-size:${fs}" title="${title}">${b.total}</div>`;
+      return `<div class="bt-bubble ${type}" style="left:${left}%;width:${size}px;height:${size}px;top:${(50-size)/2}px;font-size:${fs}" title="${title}">${b.total}</div>`;
     }).join('');
     return `<div class="bt-track">${bubblesHtml}</div>`;
   }
