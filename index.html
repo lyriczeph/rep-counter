@@ -1214,8 +1214,9 @@ function showDayDetail(dateKey) {
   html += '</div>';
 
   html += '<ul class="day-detail-sets">';
+  const exLabel = (e) => e === 'pullup' ? 'Pull' : 'Push';
   allSets.forEach((s, i) => {
-    html += `<li class="set-item"><span class="set-num"><span class="ex-dot ${s.exercise}"></span> Set ${i+1} <span class="set-type">${vLabel(s.variant)}${wLabel(s)}</span></span><span class="set-reps">${s.reps}</span></li>`;
+    html += `<li class="set-item"><span class="set-num"><span class="ex-dot ${s.exercise}"></span> Set ${i+1} <span class="set-type">${exLabel(s.exercise)}${vLabel(s.variant)}${wLabel(s)}</span></span><span class="set-reps">${s.reps}</span></li>`;
   });
   html += '</ul>';
 
