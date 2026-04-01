@@ -239,6 +239,30 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
 .cal-cell.has-pullup { background: var(--color-primary-highlight); }
 .cal-cell.has-both { background: linear-gradient(135deg, var(--color-primary-highlight) 50%, var(--color-secondary-highlight) 50%); }
 .cal-cell.has-pushup:not(.has-pullup) { background: var(--color-secondary-highlight); }
+.cal-cell:not(.empty) { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.cal-cell:not(.empty):active { transform: scale(0.92); }
+
+/* Day detail overlay */
+.day-detail-overlay { position: fixed; inset: 0; background: oklch(from var(--color-bg) l c h / 0.92); display: none;
+  place-items: center; z-index: 100; backdrop-filter: blur(8px); padding: var(--space-4); }
+.day-detail-overlay.visible { display: grid; }
+.day-detail-card { background: var(--color-surface); border-radius: var(--radius-xl); padding: var(--space-6);
+  width: 100%; max-width: 400px; box-shadow: var(--shadow-md); max-height: 80vh; overflow-y: auto; }
+.day-detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-4); }
+.day-detail-header h2 { font-size: var(--text-lg); font-weight: 700; }
+.day-detail-close { width: 36px; height: 36px; border-radius: var(--radius-full); background: var(--color-surface-offset);
+  display: grid; place-items: center; font-size: var(--text-base); }
+.day-detail-close:hover { background: var(--color-surface-offset-2); }
+.day-detail-stats { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); margin-bottom: var(--space-4); }
+.day-detail-stat { text-align: center; padding: var(--space-3); background: var(--color-surface-offset); border-radius: var(--radius-md); }
+.day-detail-stat .val { font-size: var(--text-lg); font-weight: 700; font-variant-numeric: tabular-nums; }
+.day-detail-stat .val.pull { color: var(--color-primary); }
+.day-detail-stat .val.push { color: var(--color-secondary); }
+.day-detail-stat .lbl { font-size: var(--text-xs); color: var(--color-text-muted); }
+.day-detail-sets { list-style: none; }
+.day-detail-sets .set-item { display: flex; justify-content: space-between; align-items: center; padding: var(--space-2) var(--space-3);
+  background: var(--color-surface); border-radius: var(--radius-sm); margin-bottom: var(--space-1); font-size: var(--text-sm); }
+.day-detail-empty { text-align: center; padding: var(--space-6); color: var(--color-text-muted); font-size: var(--text-sm); }
 
 /* Charts */
 .chart-card { background: var(--color-surface); border-radius: var(--radius-lg); padding: var(--space-4);
@@ -514,6 +538,17 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
     Settings
   </button>
 </nav>
+
+<!-- Day detail overlay -->
+<div class="day-detail-overlay" id="dayDetailOverlay">
+  <div class="day-detail-card">
+    <div class="day-detail-header">
+      <h2 id="dayDetailTitle"></h2>
+      <button class="day-detail-close" id="dayDetailClose">×</button>
+    </div>
+    <div id="dayDetailContent"></div>
+  </div>
+</div>
 
 <!-- Rest timer overlay -->
 <div class="rest-overlay" id="restOverlay">
@@ -993,13 +1028,70 @@ function renderCalendar() {
     } else if (v.push > 0) {
       countHtml = `<span class="cal-count push">${v.push}</span>`;
     }
-    html += `<div class="${cls}"><span class="cal-date">${d}</span>${countHtml}</div>`;
+    html += `<div class="${cls}" data-date="${key}"><span class="cal-date">${d}</span>${countHtml}</div>`;
   }
   document.getElementById('calGrid').innerHTML = html;
+  // Add click handlers to calendar cells
+  document.querySelectorAll('.cal-cell:not(.empty)').forEach(cell => {
+    cell.addEventListener('click', () => showDayDetail(cell.dataset.date));
+  });
 }
 
 document.getElementById('calPrev').addEventListener('click', () => { calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } renderCalendar(); });
 document.getElementById('calNext').addEventListener('click', () => { calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } renderCalendar(); });
+
+// ─── Day Detail ───
+function showDayDetail(dateKey) {
+  const overlay = document.getElementById('dayDetailOverlay');
+  const title = document.getElementById('dayDetailTitle');
+  const content = document.getElementById('dayDetailContent');
+  const d = new Date(dateKey + 'T12:00:00');
+  title.textContent = d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+
+  const dayWorkouts = state.history.filter(w => toLocalDateKey(w.date) === dateKey);
+
+  if (dayWorkouts.length === 0) {
+    content.innerHTML = '<div class="day-detail-empty">No workouts on this day.</div>';
+    overlay.classList.add('visible');
+    return;
+  }
+
+  let allSets = [];
+  let pullTotal = 0, pushTotal = 0;
+  dayWorkouts.forEach(w => {
+    pullTotal += w.pullTotal || 0;
+    pushTotal += w.pushTotal || 0;
+    const sets = Array.isArray(w.sets) ? w.sets : (typeof w.sets === 'string' ? JSON.parse(w.sets) : []);
+    sets.forEach(s => allSets.push(s));
+  });
+
+  const vLabel = (v) => ({ standard:'STD', eccentric:'ECC', weighted:'WTD', diamond:'DIA', archer:'ARC' }[v] || v.toUpperCase());
+  const wLabel = (s) => s.weight ? ` @ ${s.weight}lb` : '';
+
+  let html = '<div class="day-detail-stats">';
+  if (pullTotal > 0) html += `<div class="day-detail-stat"><div class="val pull">${pullTotal}</div><div class="lbl">Pull-ups</div></div>`;
+  if (pushTotal > 0) html += `<div class="day-detail-stat"><div class="val push">${pushTotal}</div><div class="lbl">Push-ups</div></div>`;
+  if (pullTotal === 0 && pushTotal === 0) html += `<div class="day-detail-stat"><div class="val">0</div><div class="lbl">Total reps</div></div>`;
+  html += `<div class="day-detail-stat"><div class="val">${allSets.length}</div><div class="lbl">Sets</div></div>`;
+  html += `<div class="day-detail-stat"><div class="val">${dayWorkouts.length}</div><div class="lbl">Session${dayWorkouts.length > 1 ? 's' : ''}</div></div>`;
+  html += '</div>';
+
+  html += '<ul class="day-detail-sets">';
+  allSets.forEach((s, i) => {
+    html += `<li class="set-item"><span class="set-num"><span class="ex-dot ${s.exercise}"></span> Set ${i+1} <span class="set-type">${vLabel(s.variant)}${wLabel(s)}</span></span><span class="set-reps">${s.reps}</span></li>`;
+  });
+  html += '</ul>';
+
+  content.innerHTML = html;
+  overlay.classList.add('visible');
+}
+
+document.getElementById('dayDetailClose').addEventListener('click', () => {
+  document.getElementById('dayDetailOverlay').classList.remove('visible');
+});
+document.getElementById('dayDetailOverlay').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) document.getElementById('dayDetailOverlay').classList.remove('visible');
+});
 
 // ─── Charts ───
 function getCS(prop) { return getComputedStyle(document.documentElement).getPropertyValue(prop).trim(); }
