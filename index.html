@@ -141,6 +141,47 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
   font-size: var(--text-sm); font-weight: 500; text-align: center; color: var(--color-text-muted); }
 .type-btn.active { background: var(--color-surface-2); color: var(--color-text); box-shadow: var(--shadow-sm); }
 
+/* Exercise hero image */
+.exercise-hero { display: flex; justify-content: center; margin-bottom: var(--space-3); cursor: pointer;
+  -webkit-tap-highlight-color: transparent; position: relative; }
+.exercise-hero img { height: 120px; width: auto; object-fit: contain; border-radius: var(--radius-lg);
+  transition: transform var(--transition-interactive); }
+.exercise-hero:active img { transform: scale(0.95); }
+.exercise-hero .info-hint { position: absolute; bottom: 4px; right: calc(50% - 60px); background: var(--color-surface-dynamic);
+  border-radius: var(--radius-full); width: 24px; height: 24px; display: grid; place-items: center;
+  font-size: 0.7rem; font-weight: 700; color: var(--color-text-muted); opacity: 0.8; }
+
+/* Exercise info overlay */
+.exercise-info-overlay { position: fixed; inset: 0; background: oklch(from var(--color-bg) l c h / 0.92); display: none;
+  place-items: center; z-index: 100; backdrop-filter: blur(8px); padding: var(--space-4); }
+.exercise-info-overlay.visible { display: grid; }
+.exercise-info-card { background: var(--color-surface); border-radius: var(--radius-xl); padding: var(--space-6);
+  width: 100%; max-width: 420px; box-shadow: var(--shadow-md); max-height: 85vh; overflow-y: auto; }
+.exercise-info-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-4); }
+.exercise-info-header h2 { font-size: var(--text-lg); font-weight: 700; }
+.exercise-info-close { width: 36px; height: 36px; border-radius: var(--radius-full); background: var(--color-surface-offset);
+  display: grid; place-items: center; font-size: var(--text-base); }
+.exercise-info-close:hover { background: var(--color-surface-offset-2); }
+.exercise-info-img { text-align: center; margin-bottom: var(--space-4); }
+.exercise-info-img img { max-height: 200px; width: auto; border-radius: var(--radius-lg); }
+.exercise-info-muscles { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-4); }
+.muscle-tag { padding: var(--space-1) var(--space-3); border-radius: var(--radius-full); font-size: var(--text-xs); font-weight: 600; }
+.muscle-tag.primary { background: var(--color-primary-highlight); color: var(--color-primary); }
+.muscle-tag.secondary { background: var(--color-surface-offset); color: var(--color-text-muted); }
+.muscle-tag.primary.push { background: var(--color-secondary-highlight); color: var(--color-secondary); }
+.exercise-info-steps { list-style: none; counter-reset: step; }
+.exercise-info-steps li { counter-increment: step; padding: var(--space-2) 0; padding-left: var(--space-8);
+  position: relative; font-size: var(--text-sm); color: var(--color-text); line-height: 1.5;
+  border-bottom: 1px solid var(--color-divider); }
+.exercise-info-steps li:last-child { border-bottom: none; }
+.exercise-info-steps li::before { content: counter(step); position: absolute; left: 0; top: var(--space-2);
+  width: 24px; height: 24px; border-radius: var(--radius-full); background: var(--color-surface-offset);
+  display: grid; place-items: center; font-size: var(--text-xs); font-weight: 700; color: var(--color-text-muted); }
+.exercise-info-section { font-size: var(--text-xs); font-weight: 700; color: var(--color-text-muted);
+  text-transform: uppercase; letter-spacing: 0.05em; margin: var(--space-4) 0 var(--space-2); }
+.exercise-info-tips { font-size: var(--text-sm); color: var(--color-text-muted); line-height: 1.5; }
+.exercise-info-tips li { padding: var(--space-1) 0; list-style: disc; margin-left: var(--space-4); }
+
 /* Weight input */
 .weight-input { display: none; align-items: center; justify-content: center; gap: var(--space-2);
   margin-bottom: var(--space-2); }
@@ -432,6 +473,10 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
       <button class="type-btn" data-type="eccentric">Eccentric</button>
       <button class="type-btn" data-type="weighted">Weighted</button>
     </div>
+    <div class="exercise-hero" id="exerciseHero" title="Tap for form guide">
+      <img id="exerciseHeroImg" src="img/exercise-pullup-standard.webp" alt="Exercise illustration">
+      <span class="info-hint">i</span>
+    </div>
     <div class="weight-input" id="weightInput">
       <button class="weight-adjust" id="weightDown">−</button>
       <span class="weight-value" id="weightValue">10 lb</span>
@@ -538,6 +583,17 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
     Settings
   </button>
 </nav>
+
+<!-- Exercise info overlay -->
+<div class="exercise-info-overlay" id="exerciseInfoOverlay">
+  <div class="exercise-info-card">
+    <div class="exercise-info-header">
+      <h2 id="exerciseInfoTitle"></h2>
+      <button class="exercise-info-close" id="exerciseInfoClose">×</button>
+    </div>
+    <div id="exerciseInfoContent"></div>
+  </div>
+</div>
 
 <!-- Day detail overlay -->
 <div class="day-detail-overlay" id="dayDetailOverlay">
@@ -870,9 +926,11 @@ function setExercise(ex) {
     vs.querySelectorAll('.type-btn').forEach(x => x.classList.remove('active'));
     b.classList.add('active'); state.variant = b.dataset.type;
     updateWeightVisibility();
+    updateExerciseHero();
   }));
   document.querySelector('.rest-timer').style.color = ex === 'pullup' ? 'var(--color-primary)' : 'var(--color-secondary)';
   updateWeightVisibility();
+  updateExerciseHero();
 }
 
 document.querySelectorAll('.exercise-tab').forEach(btn => {
@@ -884,6 +942,7 @@ document.querySelectorAll('.type-btn').forEach(b => b.addEventListener('click', 
   document.querySelectorAll('#variantSelector .type-btn').forEach(x => x.classList.remove('active'));
   b.classList.add('active'); state.variant = b.dataset.type;
   updateWeightVisibility();
+  updateExerciseHero();
 }));
 
 // ─── Weight Input ───
@@ -901,6 +960,84 @@ document.getElementById('weightUp').addEventListener('click', () => {
 document.getElementById('weightDown').addEventListener('click', () => {
   state.currentWeight = Math.max(state.currentWeight - 5, 5);
   renderWeight();
+});
+
+// ─── Exercise Data Catalog ───
+const EXERCISE_DATA = {
+  pullup_standard: {
+    name: 'Standard Pull-Up', img: 'img/exercise-pullup-standard.webp', difficulty: 'Intermediate',
+    target: 'Lats', secondary: ['Biceps', 'Rear Delts', 'Rhomboids', 'Core'],
+    steps: ['Grip the bar slightly wider than shoulder width, palms facing away.','Hang with arms fully extended, shoulders engaged (not shrugging).','Pull your chest toward the bar by driving elbows down and back.','Chin clears the bar at the top — squeeze your lats.','Lower under control to full arm extension. That\'s one rep.'],
+    tips: ['Avoid kipping or swinging — strict form builds more strength.','Initiate the pull by depressing your shoulder blades, not bending your arms.','Breathe out on the way up, in on the way down.']
+  },
+  pullup_eccentric: {
+    name: 'Eccentric (Negative) Pull-Up', img: 'img/exercise-pullup-eccentric.webp', difficulty: 'Beginner',
+    target: 'Lats', secondary: ['Biceps', 'Rear Delts', 'Forearms', 'Core'],
+    steps: ['Jump or use a step to get your chin above the bar.','Hold the top position for 1–2 seconds.','Lower yourself as slowly as possible (aim for 5–10 seconds).','Fully extend your arms at the bottom.','Step back up and repeat.'],
+    tips: ['The slower the descent, the more strength you build.','Great for building toward your first full pull-up.','Focus on controlling the movement through the entire range.']
+  },
+  pullup_weighted: {
+    name: 'Weighted Pull-Up', img: 'img/exercise-pullup-weighted.webp', difficulty: 'Advanced',
+    target: 'Lats', secondary: ['Biceps', 'Rear Delts', 'Rhomboids', 'Core', 'Grip'],
+    steps: ['Add weight via a dip belt, weight vest, or loaded backpack.','Grip the bar slightly wider than shoulder width.','Hang with arms fully extended, brace your core.','Pull your chest toward the bar — same form as a standard pull-up.','Lower under control. Avoid dropping or swinging.'],
+    tips: ['Start with 10% of bodyweight and progress by 5 lbs every 2–3 weeks.','Keep reps in the 3–5 range for strength.','Pair with bodyweight sets for volume after your heavy sets.']
+  },
+  pushup_standard: {
+    name: 'Standard Push-Up', img: 'img/exercise-pushup-standard.webp', difficulty: 'Beginner',
+    target: 'Chest', secondary: ['Triceps', 'Front Delts', 'Core', 'Serratus Anterior'],
+    steps: ['Place hands slightly wider than shoulder width, fingers spread.','Extend your body into a straight plank — feet hip-width apart.','Lower your chest to just above the floor, elbows at ~45°.','Push back up to full arm extension.','Keep core tight throughout — no sagging hips.'],
+    tips: ['Elbows should point back, not flare out to the sides.','Full range of motion: chest nearly touches the floor each rep.','Engage your glutes to keep your body in a straight line.']
+  },
+  pushup_diamond: {
+    name: 'Diamond Push-Up', img: 'img/exercise-pushup-diamond.webp', difficulty: 'Intermediate',
+    target: 'Triceps', secondary: ['Inner Chest', 'Front Delts', 'Core'],
+    steps: ['Place hands together beneath your chest, forming a diamond shape with thumbs and index fingers.','Extend into a plank position, body straight.','Lower your chest toward your hands, elbows close to your body.','Push back up, squeezing your triceps at the top.','Keep elbows tracking along your ribs, not flaring out.'],
+    tips: ['Harder than standard push-ups — reduce reps if needed.','If wrists hurt, widen the diamond slightly.','Activates triceps ~50% more than standard push-ups.']
+  },
+  pushup_archer: {
+    name: 'Archer Push-Up', img: 'img/exercise-pushup-archer.webp', difficulty: 'Advanced',
+    target: 'Chest', secondary: ['Triceps', 'Front Delts', 'Core', 'Obliques'],
+    steps: ['Start in a wide push-up position, fingers pointing outward.','Shift your weight to one arm and lower toward that side.','The other arm extends straight out for support, not pushing.','Push back up from the loaded arm.','Alternate sides each rep, or do all reps on one side then switch.'],
+    tips: ['This is a precursor to one-arm push-ups.','Keep your body as straight as possible — resist rotation.','Lower the difficulty by bending the extended arm slightly.']
+  }
+};
+
+function getExerciseKey() { return state.exercise + '_' + state.variant; }
+
+function updateExerciseHero() {
+  const key = getExerciseKey();
+  const data = EXERCISE_DATA[key];
+  if (data) {
+    document.getElementById('exerciseHeroImg').src = data.img;
+  }
+}
+
+function showExerciseInfo() {
+  const key = getExerciseKey();
+  const data = EXERCISE_DATA[key];
+  if (!data) return;
+  const overlay = document.getElementById('exerciseInfoOverlay');
+  document.getElementById('exerciseInfoTitle').textContent = data.name;
+  const isPush = state.exercise === 'pushup';
+  let html = `<div class="exercise-info-img"><img src="${data.img}" alt="${data.name}"></div>`;
+  html += `<div class="exercise-info-muscles">`;
+  html += `<span class="muscle-tag primary${isPush ? ' push' : ''}">${data.target}</span>`;
+  data.secondary.forEach(m => { html += `<span class="muscle-tag secondary">${m}</span>`; });
+  html += `</div>`;
+  html += `<div class="exercise-info-section">How To</div>`;
+  html += `<ol class="exercise-info-steps">${data.steps.map(s => `<li>${s}</li>`).join('')}</ol>`;
+  html += `<div class="exercise-info-section">Tips</div>`;
+  html += `<ul class="exercise-info-tips">${data.tips.map(t => `<li>${t}</li>`).join('')}</ul>`;
+  document.getElementById('exerciseInfoContent').innerHTML = html;
+  overlay.classList.add('visible');
+}
+
+document.getElementById('exerciseHero').addEventListener('click', showExerciseInfo);
+document.getElementById('exerciseInfoClose').addEventListener('click', () => {
+  document.getElementById('exerciseInfoOverlay').classList.remove('visible');
+});
+document.getElementById('exerciseInfoOverlay').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) document.getElementById('exerciseInfoOverlay').classList.remove('visible');
 });
 
 // ─── Counter ───
