@@ -599,12 +599,19 @@ function updateRestDisplay(s, el) { el.textContent = Math.floor(s/60) + ':' + St
 function endRest() { clearInterval(restInterval); document.getElementById('restOverlay').classList.remove('visible'); }
 document.getElementById('skipRest').addEventListener('click', endRest);
 
+// ─── Local Date Helpers ───
+function toLocalDateKey(d) {
+  // Returns YYYY-MM-DD in the user's local timezone
+  const dt = (d instanceof Date) ? d : new Date(d);
+  return dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
+}
+function getDateKey(d) { return toLocalDateKey(d); }
+
 // ─── Calendar ───
-function getDateKey(d) { return d.toISOString().slice(0,10); }
 function getDailyVolume() {
   const vol = {};
   state.history.forEach(w => {
-    const key = w.date.slice(0,10);
+    const key = toLocalDateKey(w.date);
     if (!vol[key]) vol[key] = { pull: 0, push: 0 };
     vol[key].pull += w.pullTotal || 0;
     vol[key].push += w.pushTotal || 0;
@@ -656,7 +663,7 @@ function updateCharts() {
     const v = vol[key] || { pull: 0, push: 0 };
     pullData.push(v.pull > 0 ? v.pull : null); pushData.push(v.push > 0 ? v.push : null);
     // avg per set
-    const dayW = state.history.filter(w => w.date.slice(0,10) === key);
+    const dayW = state.history.filter(w => toLocalDateKey(w.date) === key);
     let pSets = 0, pReps = 0, uSets = 0, uReps = 0;
     dayW.forEach(w => w.sets.forEach(s => { if (s.exercise==='pullup'){pSets++;pReps+=s.reps;} else {uSets++;uReps+=s.reps;} }));
     pullAvg.push(pSets > 0 ? Math.round(pReps/pSets*10)/10 : null);
