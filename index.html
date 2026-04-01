@@ -141,6 +141,22 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
   font-size: var(--text-sm); font-weight: 500; text-align: center; color: var(--color-text-muted); }
 .type-btn.active { background: var(--color-surface-2); color: var(--color-text); box-shadow: var(--shadow-sm); }
 
+/* Bubble timeline */
+.bubble-timeline { padding: var(--space-2) 0; }
+.bubble-timeline .bt-row { display: flex; align-items: center; min-height: 70px; margin-bottom: var(--space-2); }
+.bubble-timeline .bt-label { width: 48px; flex-shrink: 0; font-size: 0.65rem; font-weight: 700; color: var(--color-text-muted);
+  text-transform: uppercase; letter-spacing: 0.03em; line-height: 1.2; }
+.bubble-timeline .bt-track { flex: 1; position: relative; height: 70px; }
+.bubble-timeline .bt-bubble { position: absolute; border-radius: var(--radius-full); display: grid; place-items: center;
+  font-weight: 700; font-variant-numeric: tabular-nums; color: var(--color-text-inverse);
+  transform: translateX(-50%); transition: transform 120ms ease; box-shadow: var(--shadow-sm); }
+.bubble-timeline .bt-bubble:active { transform: translateX(-50%) scale(0.92); }
+.bubble-timeline .bt-bubble.pull { background: var(--color-primary); }
+.bubble-timeline .bt-bubble.push { background: var(--color-secondary); }
+.bubble-timeline .bt-axis { display: flex; justify-content: space-between; padding-left: 48px; }
+.bubble-timeline .bt-axis span { font-size: 0.6rem; color: var(--color-text-faint); font-variant-numeric: tabular-nums; }
+.bubble-timeline .bt-empty { text-align: center; padding: var(--space-6) var(--space-4); color: var(--color-text-muted); font-size: var(--text-sm); }
+
 /* Exercise hero image */
 .exercise-hero { display: flex; justify-content: center; margin-bottom: var(--space-3); cursor: pointer;
   -webkit-tap-highlight-color: transparent; position: relative; }
@@ -500,7 +516,7 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
     <div id="leaderboardSection"></div>
     <div class="chart-card">
       <h3>Today’s Sets</h3>
-      <div class="chart-wrap" style="height:240px"><canvas id="dailySetsChart"></canvas></div>
+      <div id="dailyBubbleTimeline"></div>
     </div>
     <div class="chart-card">
       <h3>30-Day Volume</h3>
@@ -877,7 +893,7 @@ let state = Object.assign({}, defaults, { history: saved.history || [], restSeco
 // sets: [{reps, exercise, variant}]
 let restInterval = null;
 let calMonth = new Date().getMonth(), calYear = new Date().getFullYear();
-let trendChart = null, dailySetsChart = null;
+let trendChart = null;
 let historyFilter = 'all';
 
 // ─── Theme ───
@@ -1234,6 +1250,93 @@ document.getElementById('dayDetailOverlay').addEventListener('click', (e) => {
 // ─── Charts ───
 function getCS(prop) { return getComputedStyle(document.documentElement).getPropertyValue(prop).trim(); }
 
+// ─── Bubble Timeline ───
+function renderBubbleTimeline() {
+  const container = document.getElementById('dailyBubbleTimeline');
+  const todayKey = toLocalDateKey(new Date());
+  const todayWorkouts = state.history.filter(w => toLocalDateKey(w.date) === todayKey);
+
+  if (todayWorkouts.length === 0) {
+    container.innerHTML = '<div class="bubble-timeline"><div class="bt-empty">No sets logged today yet.</div></div>';
+    return;
+  }
+
+  // Group sets by workout, aggregate per exercise per workout
+  const pullBubbles = [], pushBubbles = [];
+  todayWorkouts.forEach(w => {
+    const wTime = new Date(w.date);
+    const hours = wTime.getHours() + wTime.getMinutes() / 60;
+    const sets = Array.isArray(w.sets) ? w.sets : (typeof w.sets === 'string' ? JSON.parse(w.sets) : []);
+    const pullSets = sets.filter(s => s.exercise === 'pullup');
+    const pushSets = sets.filter(s => s.exercise === 'pushup');
+    const pullTotal = pullSets.reduce((a, s) => a + s.reps, 0);
+    const pushTotal = pushSets.reduce((a, s) => a + s.reps, 0);
+    if (pullTotal > 0) pullBubbles.push({ hours, total: pullTotal, sets: pullSets, time: wTime });
+    if (pushTotal > 0) pushBubbles.push({ hours, total: pushTotal, sets: pushSets, time: wTime });
+  });
+
+  // Find max reps for sizing
+  const allTotals = [...pullBubbles, ...pushBubbles].map(b => b.total);
+  const maxTotal = Math.max(...allTotals, 1);
+  const MIN_SIZE = 32, MAX_SIZE = 62;
+
+  function bubbleSize(total) {
+    const ratio = total / maxTotal;
+    return Math.round(MIN_SIZE + ratio * (MAX_SIZE - MIN_SIZE));
+  }
+
+  function fontSize(size) {
+    if (size <= 36) return '0.7rem';
+    if (size <= 48) return '0.85rem';
+    return '1rem';
+  }
+
+  // Time range: 5am to 11pm
+  const T_MIN = 5, T_MAX = 23;
+  function timeToPercent(h) {
+    return Math.max(0, Math.min(100, ((h - T_MIN) / (T_MAX - T_MIN)) * 100));
+  }
+
+  function formatTime(d) {
+    const hr = d.getHours(); const mn = d.getMinutes();
+    const ampm = hr >= 12 ? 'PM' : 'AM'; const hr12 = hr % 12 || 12;
+    return hr12 + ':' + String(mn).padStart(2, '0') + ' ' + ampm;
+  }
+
+  function renderRow(bubbles, type) {
+    if (bubbles.length === 0) return '<div class="bt-track"></div>';
+    const bubblesHtml = bubbles.map(b => {
+      const size = bubbleSize(b.total);
+      const left = timeToPercent(b.hours);
+      const fs = fontSize(size);
+      const title = `${formatTime(b.time)}: ${b.total} reps (${b.sets.length} set${b.sets.length > 1 ? 's' : ''})`;
+      return `<div class="bt-bubble ${type}" style="left:${left}%;width:${size}px;height:${size}px;top:${(70-size)/2}px;font-size:${fs}" title="${title}">${b.total}</div>`;
+    }).join('');
+    return `<div class="bt-track">${bubblesHtml}</div>`;
+  }
+
+  // Axis labels
+  const axisHours = [5, 8, 11, 14, 17, 20, 23];
+  const axisHtml = axisHours.map(h => {
+    const hr = h % 12 || 12;
+    return `<span>${hr}${h >= 12 ? 'p' : 'a'}</span>`;
+  }).join('');
+
+  const hasPull = pullBubbles.length > 0;
+  const hasPush = pushBubbles.length > 0;
+
+  let html = '<div class="bubble-timeline">';
+  if (hasPull) {
+    html += `<div class="bt-row"><div class="bt-label">Pull-Ups</div>${renderRow(pullBubbles, 'pull')}</div>`;
+  }
+  if (hasPush) {
+    html += `<div class="bt-row"><div class="bt-label">Push-Ups</div>${renderRow(pushBubbles, 'push')}</div>`;
+  }
+  html += `<div class="bt-axis">${axisHtml}</div>`;
+  html += '</div>';
+  container.innerHTML = html;
+}
+
 function updateCharts() {
   const vol = getDailyVolume();
   const labels = [], pullData = [], pushData = [];
@@ -1257,80 +1360,8 @@ function updateCharts() {
     }
   };
 
-  // Daily sets bar chart on 24-hour timeline
-  const todayKey = toLocalDateKey(new Date());
-  const todayWorkouts = state.history.filter(w => toLocalDateKey(w.date) === todayKey);
-  const todaySets = [];
-  todayWorkouts.forEach(w => {
-    const wTime = new Date(w.date);
-    const sets = Array.isArray(w.sets) ? w.sets : (typeof w.sets === 'string' ? JSON.parse(w.sets) : []);
-    sets.forEach(s => todaySets.push({ ...s, time: wTime }));
-  });
-  if (dailySetsChart) dailySetsChart.destroy();
-  if (todaySets.length > 0) {
-    // Build pull-up and push-up datasets as {x: hour, y: reps} points
-    const pullPoints = [], pushPoints = [];
-    todaySets.forEach(s => {
-      const hours = s.time.getHours() + s.time.getMinutes() / 60;
-      const point = { x: hours, y: s.reps, _set: s };
-      if (s.exercise === 'pullup') pullPoints.push(point); else pushPoints.push(point);
-    });
-
-    // Use same colors as 30-Day Volume chart for consistency
-    const pullBorder = getCS('--chart-primary');
-    const pullFill = getCS('--chart-primary-fill');
-    const pushBorder = getCS('--chart-secondary');
-    const pushFill = getCS('--chart-secondary-fill');
-
-    dailySetsChart = new Chart(document.getElementById('dailySetsChart'), {
-      type: 'bar', data: { datasets: [
-        { label: 'Pull-Ups', data: pullPoints, backgroundColor: pullBorder, borderColor: pullBorder, borderWidth: 2, borderRadius: 6, barPercentage: 1.0, categoryPercentage: 1.0, maxBarThickness: 50, minBarLength: 8, order: 1 },
-        { label: 'Push-Ups', data: pushPoints, backgroundColor: pushBorder, borderColor: pushBorder, borderWidth: 2, borderRadius: 6, barPercentage: 1.0, categoryPercentage: 1.0, maxBarThickness: 50, minBarLength: 8, order: 2 },
-      ] },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: {
-          legend: { display: true, labels: { boxWidth: 10, padding: 12, font: { size: 11, family: 'Satoshi' }, color: textC } },
-          tooltip: { callbacks: {
-            title: (items) => {
-              if (!items.length) return '';
-              const h = items[0].parsed.x;
-              const hr = Math.floor(h); const mn = Math.round((h - hr) * 60);
-              const ampm = hr >= 12 ? 'PM' : 'AM'; const hr12 = hr % 12 || 12;
-              return hr12 + ':' + String(mn).padStart(2, '0') + ' ' + ampm;
-            },
-            label: (ctx) => {
-              const s = ctx.raw._set;
-              if (!s) return '';
-              const v = ({ standard:'', eccentric:' Ecc', weighted:' Wtd', diamond:' Dia', archer:' Arc' }[s.variant] || '');
-              const w = s.weight ? ` @${s.weight}lb` : '';
-              return `${s.reps} reps${v}${w}`;
-            }
-          }}
-        },
-        scales: {
-          x: {
-            type: 'linear', min: 5, max: 23, stacked: false,
-            grid: { display: false },
-            ticks: { color: textC, font: { size: 10, family: 'Satoshi' }, stepSize: 3,
-              callback: (v) => { const hr = v % 12 || 12; return hr + (v >= 12 ? 'p' : 'a'); }
-            },
-            title: { display: false }
-          },
-          y: { grid: { color: grid }, ticks: { color: textC, font: { size: 10, family: 'Satoshi' }, precision: 0 }, beginAtZero: true, stacked: false,
-            title: { display: true, text: 'Reps', color: textC, font: { size: 10, family: 'Satoshi' } }
-          }
-        }
-      }
-    });
-  } else {
-    const ctx = document.getElementById('dailySetsChart').getContext('2d');
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    ctx.fillStyle = textC;
-    ctx.font = '14px Satoshi, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('No sets logged today yet', ctx.canvas.width / 2, ctx.canvas.height / 2);
-  }
+  // Daily bubble timeline
+  renderBubbleTimeline();
 
   // 30-day trend line chart
   if (trendChart) trendChart.destroy();
