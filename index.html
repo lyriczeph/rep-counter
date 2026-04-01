@@ -427,6 +427,16 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
 
   <!-- STATS -->
   <div class="panel" id="panel-stats">
+    <!-- Leaderboard section -->
+    <div id="leaderboardSection"></div>
+    <div class="chart-card">
+      <h3>30-Day Volume</h3>
+      <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>30-Day Avg Reps / Set</h3>
+      <div class="chart-wrap"><canvas id="avgChart"></canvas></div>
+    </div>
     <div class="cal-header">
       <button class="cal-nav-btn" id="calPrev" aria-label="Previous month">←</button>
       <h2 id="calTitle"></h2>
@@ -437,16 +447,6 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
       <span><span class="ex-dot pushup"></span> Push-Ups</span>
     </div>
     <div class="cal-grid" id="calGrid"></div>
-    <div class="chart-card">
-      <h3>30-Day Volume</h3>
-      <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
-    </div>
-    <div class="chart-card">
-      <h3>30-Day Avg Reps / Set</h3>
-      <div class="chart-wrap"><canvas id="avgChart"></canvas></div>
-    </div>
-    <!-- Leaderboard section -->
-    <div id="leaderboardSection"></div>
   </div>
 
   <!-- HISTORY -->
