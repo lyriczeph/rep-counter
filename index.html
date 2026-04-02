@@ -2157,7 +2157,21 @@ function renderDailyBriefing() {
     body = `<div class="briefing-plan">${prog.pullSets} pull-up sets · ${prog.pushSets} push-up sets · ${totalReps} total reps</div>Rest up. Tomorrow is a <strong>${tomorrow.day}</strong> day.`;
   }
 
-  el.innerHTML = `<div class="briefing-card"><div class="briefing-heading">${heading}</div><div class="briefing-body">${body}${btn}</div></div>`;
+  // Debug: show raw data for troubleshooting
+  const todayKey = toLocalDateKey(new Date());
+  const todayWorkouts = state.history.filter(w => toLocalDateKey(w.date) === todayKey);
+  let debugPullSets = 0, debugPushSets = 0;
+  todayWorkouts.forEach(w => {
+    const sets = Array.isArray(w.sets) ? w.sets : (typeof w.sets === 'string' ? JSON.parse(w.sets) : []);
+    sets.forEach(s => { if (s.exercise === 'pullup') debugPullSets++; else debugPushSets++; });
+  });
+  const debugHtml = `<div style="font-size:0.6rem;color:var(--color-text-faint);margin-top:var(--space-2);font-family:monospace">
+    today=${todayKey} | workouts=${todayWorkouts.length} | history=${state.history.length}<br>
+    saved: pull=${debugPullSets} push=${debugPushSets} | unsaved: ${(state.sets||[]).length}<br>
+    getTodayProgress: pull=${prog.pullSets} push=${prog.pushSets}
+  </div>`;
+
+  el.innerHTML = `<div class="briefing-card"><div class="briefing-heading">${heading}</div><div class="briefing-body">${body}${btn}</div>${debugHtml}</div>`;
 }
 
 // ─── GTG Philosophy ───
