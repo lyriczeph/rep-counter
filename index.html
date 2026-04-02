@@ -468,6 +468,28 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
 .plan-dot.done.push { background: var(--color-secondary-highlight); color: var(--color-secondary); }
 .plan-today-summary { font-size: var(--text-xs); font-weight: 600; flex-shrink: 0; width: 48px; text-align: right; }
 
+/* Exercise suggestion */
+.exercise-suggestion { display: none; text-align: center; padding: var(--space-3) var(--space-4);
+  background: var(--color-surface); border-radius: var(--radius-lg); margin-bottom: var(--space-4); box-shadow: var(--shadow-sm); font-size: var(--text-sm); }
+.exercise-suggestion.visible { display: block; }
+.exercise-suggestion p { color: var(--color-text-muted); margin-bottom: var(--space-3); }
+.exercise-suggestion-btns { display: flex; gap: var(--space-2); justify-content: center; }
+.exercise-suggestion-btns button { padding: var(--space-2) var(--space-4); border-radius: var(--radius-full);
+  font-size: var(--text-sm); font-weight: 600; min-height: 40px; }
+
+/* Warm-up prompt */
+.warmup-prompt { display: none; position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%);
+  width: calc(100% - 2rem); max-width: 440px; background: var(--color-surface); border-radius: var(--radius-lg);
+  padding: var(--space-4); box-shadow: var(--shadow-md); z-index: 90; text-align: center; animation: slideUp 300ms ease; }
+.warmup-prompt.visible { display: block; }
+.warmup-prompt h4 { font-size: var(--text-sm); font-weight: 700; margin-bottom: var(--space-3); }
+.warmup-prompt ul { list-style: disc; text-align: left; margin: 0 auto var(--space-4); max-width: 280px; padding-left: var(--space-6); }
+.warmup-prompt li { font-size: var(--text-sm); color: var(--color-text-muted); padding: var(--space-1) 0; }
+
+/* Coach entrance animation */
+@keyframes coachFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.coach-fade-in { animation: coachFadeIn 400ms ease both; }
+
 /* Assessment */
 .assessment-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); margin-bottom: var(--space-4); }
 .assessment-metric { text-align: center; padding: var(--space-3) var(--space-2); background: var(--color-surface-offset); border-radius: var(--radius-md); }
@@ -792,6 +814,7 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
         <div class="bar-push" style="width:0%"></div>
       </div>
     </div>
+    <div class="exercise-suggestion" id="exerciseSuggestion"></div>
     <div class="exercise-picker">
       <button class="exercise-tab active" data-ex="pullup"><span class="ex-dot pullup"></span> Pull-Ups</button>
       <button class="exercise-tab" data-ex="pushup"><span class="ex-dot pushup"></span> Push-Ups</button>
@@ -851,6 +874,7 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
     <div class="coach-section" id="coachPhilosophy"></div>
     <div class="coach-section" id="coachPlan"></div>
     <div class="coach-section" id="coachAssessment"></div>
+    <div style="text-align:center;padding:var(--space-4) 0"><button style="font-size:var(--text-sm);font-weight:500;color:var(--color-primary);text-decoration:underline;text-underline-offset:2px" onclick="openHistoryOverlay()">View full workout history →</button></div>
   </div>
 
   <!-- HISTORY (overlay, not in nav) -->
@@ -957,6 +981,13 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
     Settings
   </button>
 </nav>
+
+<!-- Warm-up prompt -->
+<div class="warmup-prompt" id="warmupPrompt">
+  <h4>💪 First set of the day — warm up first!</h4>
+  <ul><li>10 arm circles each direction</li><li>5 scapular pull-ups (or wall push-ups)</li><li>1 easy set at half your normal reps</li></ul>
+  <button class="briefing-btn" onclick="dismissWarmup()" style="width:100%">I'm Warmed Up →</button>
+</div>
 
 <!-- History overlay -->
 <div class="history-overlay" id="historyOverlay">
@@ -2246,12 +2277,92 @@ function renderAssessment() {
   </div>`;
 }
 
+// ─── Smart Exercise Suggestion ───
+let suggestionDismissedToday = false;
+let pullCompletionToasted = false, pushCompletionToasted = false;
+
+function updateExerciseSuggestion() {
+  const el = document.getElementById('exerciseSuggestion');
+  if (!el || suggestionDismissedToday) { if (el) el.classList.remove('visible'); return; }
+  const prog = getTodayProgress();
+  if (prog.pullSets >= 2 && prog.pushSets === 0) {
+    el.innerHTML = `<p>You\u2019ve done ${prog.pullSets} pull-up sets but no push-ups yet. Mix it up?</p><div class="exercise-suggestion-btns"><button style="background:var(--color-secondary);color:var(--color-text-inverse)" onclick="switchFromSuggestion('pushup')">Switch to Push-ups</button><button style="background:var(--color-surface-offset)" onclick="dismissSuggestion()">Dismiss</button></div>`;
+    el.classList.add('visible');
+  } else if (prog.pushSets >= 2 && prog.pullSets === 0) {
+    el.innerHTML = `<p>You\u2019ve done ${prog.pushSets} push-up sets but no pull-ups yet. Mix it up?</p><div class="exercise-suggestion-btns"><button style="background:var(--color-primary);color:var(--color-text-inverse)" onclick="switchFromSuggestion('pullup')">Switch to Pull-ups</button><button style="background:var(--color-surface-offset)" onclick="dismissSuggestion()">Dismiss</button></div>`;
+    el.classList.add('visible');
+  } else {
+    el.classList.remove('visible');
+  }
+}
+
+function switchFromSuggestion(type) {
+  const tab = document.querySelector(`.exercise-tab[data-ex="${type}"]`);
+  if (tab) tab.click();
+  document.getElementById('exerciseSuggestion').classList.remove('visible');
+}
+
+function dismissSuggestion() {
+  suggestionDismissedToday = true;
+  document.getElementById('exerciseSuggestion').classList.remove('visible');
+}
+
+// ─── Warm-up Prompt ───
+let warmupDismissedToday = false;
+
+function checkWarmupPrompt() {
+  if (warmupDismissedToday) return;
+  const prog = getTodayProgress();
+  if (prog.pullSets + prog.pushSets > 0 || (state.sets && state.sets.length > 0)) return;
+  const tiers = state.tiers || {};
+  const pullTier = (tiers.pullup && tiers.pullup.tier) || 'beginner';
+  const pushTier = (tiers.pushup && tiers.pushup.tier) || 'beginner';
+  if (pullTier === 'beginner' || pullTier === 'intermediate' || pushTier === 'beginner' || pushTier === 'intermediate') {
+    document.getElementById('warmupPrompt').classList.add('visible');
+  }
+}
+
+function dismissWarmup() {
+  warmupDismissedToday = true;
+  document.getElementById('warmupPrompt').classList.remove('visible');
+}
+
+// ─── Completion Toast ───
+function checkExerciseCompletion() {
+  const prog = getTodayProgress();
+  const sched = getTodaySchedule();
+  if (sched.day === 'rest') return;
+  if (state.exercise === 'pullup' && prog.pullSets === sched.pullSets && !pullCompletionToasted) {
+    pullCompletionToasted = true;
+    if (prog.pushSets < sched.pushSets) {
+      showToast('Pull-up sets done! ' + (sched.pushSets - prog.pushSets) + ' push-up sets remaining.');
+    }
+  }
+  if (state.exercise === 'pushup' && prog.pushSets === sched.pushSets && !pushCompletionToasted) {
+    pushCompletionToasted = true;
+    if (prog.pullSets < sched.pullSets) {
+      showToast('Push-up sets done! ' + (sched.pullSets - prog.pullSets) + ' pull-up sets remaining.');
+    }
+  }
+}
+
+// ─── Coach Tab Entrance ───
+let coachAnimatedToday = false;
+
 // ─── Navigation ───
 function renderCoachTab() {
   renderDailyBriefing();
   renderTrainingPlan();
   renderAssessment();
   renderPhilosophySection();
+  if (!coachAnimatedToday) {
+    coachAnimatedToday = true;
+    const briefing = document.getElementById('coachBriefing');
+    if (briefing) {
+      briefing.classList.add('coach-fade-in');
+      setTimeout(() => briefing.classList.remove('coach-fade-in'), 450);
+    }
+  }
 }
 
 document.querySelectorAll('.nav-item').forEach(item => {
@@ -2260,6 +2371,7 @@ document.querySelectorAll('.nav-item').forEach(item => {
     document.querySelectorAll('.panel').forEach(p => { if (p.id !== 'panel-history') p.classList.remove('active'); });
     item.classList.add('active');
     document.getElementById('panel-' + item.dataset.nav).classList.add('active');
+    if (item.dataset.nav === 'workout') { updateExerciseSuggestion(); checkWarmupPrompt(); renderTodayProgressCard(); }
     if (item.dataset.nav === 'coach') { renderCoachTab(); }
     if (item.dataset.nav === 'stats') { updateCharts(); renderLeaderboard(); renderTrophies(); }
     if (item.dataset.nav === 'settings') { renderHouseholdSection(); renderAccountSection(); }
@@ -2610,6 +2722,9 @@ document.getElementById('finishSet').addEventListener('click', () => {
   renderCurrentSets();
   renderTodayProgressCard();
   updateSuggestedReps();
+  updateExerciseSuggestion();
+  checkExerciseCompletion();
+  dismissWarmup();
   if (state.restSeconds > 0) startRest();
 });
 
@@ -2658,6 +2773,7 @@ function saveWorkout() {
   checkAchievements(true);
   renderTodayProgressCard();
   updateSuggestedReps();
+  updateExerciseSuggestion();
 }
 
 // ─── Rest Timer ───
