@@ -1273,7 +1273,7 @@ function computeAchievementStats() {
     workoutDays.add(dayKey);
     if (!dayWorkouts[dayKey]) dayWorkouts[dayKey] = [];
     dayWorkouts[dayKey].push(w);
-    const sets = parseSets(w.sets);
+    const sets = reconciledSets(w);
 
     totalPull += w.pullTotal || 0;
     totalPush += w.pushTotal || 0;
@@ -1301,7 +1301,7 @@ function computeAchievementStats() {
   Object.values(dayWorkouts).forEach(dayW => {
     let daySets10Plus = 0;
     dayW.forEach(w => {
-      const sets = parseSets(w.sets);
+      const sets = reconciledSets(w);
       sets.forEach(s => {
         if (s.exercise === 'pullup' && s.reps >= 10) daySets10Plus++;
       });
@@ -1339,7 +1339,7 @@ function computeAchievementStats() {
   let hasPR = false;
   if (history.length >= 2) {
     const currentW = history[0];
-    const currentSets = Array.isArray(currentW.sets) ? currentW.sets : (typeof currentW.sets === 'string' ? JSON.parse(currentW.sets) : []);
+    const currentSets = reconciledSets(currentW);
     let currMaxPull = 0, currMaxPush = 0;
     currentSets.forEach(s => {
       if (s.exercise === 'pullup' && s.reps > currMaxPull) currMaxPull = s.reps;
@@ -1348,7 +1348,7 @@ function computeAchievementStats() {
     // All-time max from previous workouts (excluding the most recent)
     let prevMaxPull = 0, prevMaxPush = 0;
     for (let i = 1; i < history.length; i++) {
-      const sets = Array.isArray(history[i].sets) ? history[i].sets : (typeof history[i].sets === 'string' ? JSON.parse(history[i].sets) : []);
+      const sets = reconciledSets(history[i]);
       sets.forEach(s => {
         if (s.exercise === 'pullup' && s.reps > prevMaxPull) prevMaxPull = s.reps;
         if (s.exercise === 'pushup' && s.reps > prevMaxPush) prevMaxPush = s.reps;
@@ -1871,7 +1871,7 @@ function getEffectiveMax(exercise) {
   const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 14);
   state.history.forEach(w => {
     if (new Date(w.date) < cutoff) return;
-    const sets = parseSets(w.sets);
+    const sets = reconciledSets(w);
     sets.forEach(s => {
       if (s.exercise === exercise && s.reps > bestRecent) bestRecent = s.reps;
     });
@@ -2109,6 +2109,37 @@ function parseSets(raw) {
   return [];
 }
 
+// Reconcile sets with totals: if per-set reps don't sum to the recorded total,
+// redistribute the total proportionally across sets (keeps set count & metadata).
+// Returns a COPY — never mutates the original.
+function reconciledSets(workout) {
+  const raw = parseSets(workout.sets);
+  if (raw.length === 0) return raw;
+  const sets = raw.map(s => ({ ...s })); // shallow copy each set
+  const pullTotal = workout.pullTotal || 0;
+  const pushTotal = workout.pushTotal || 0;
+  ['pullup', 'pushup'].forEach(ex => {
+    const exSets = sets.filter(s => s.exercise === ex);
+    if (exSets.length === 0) return;
+    const sum = exSets.reduce((a, s) => a + (s.reps || 0), 0);
+    const total = ex === 'pullup' ? pullTotal : pushTotal;
+    if (sum !== total && total > 0) {
+      // Redistribute reps proportionally, ensuring integer values that sum correctly
+      let remaining = total;
+      for (let i = 0; i < exSets.length; i++) {
+        if (i === exSets.length - 1) {
+          exSets[i].reps = remaining;
+        } else {
+          const share = sum > 0 ? Math.round((exSets[i].reps / sum) * total) : Math.round(total / exSets.length);
+          exSets[i].reps = share;
+          remaining -= share;
+        }
+      }
+    }
+  });
+  return sets;
+}
+
 function getTodayProgress() {
   const todayKey = toLocalDateKey(new Date());
   let pullSets = 0, pushSets = 0, pullReps = 0, pushReps = 0;
@@ -2259,10 +2290,10 @@ function getWeekDates() {
 function getDayProgress(dateKey) {
   let pullSets = 0, pushSets = 0, pullReps = [], pushReps = [];
   state.history.filter(w => toLocalDateKey(w.date) === dateKey).forEach(w => {
-    const sets = parseSets(w.sets);
+    const sets = reconciledSets(w);
     const wPullSets = sets.filter(s => s.exercise === 'pullup');
     const wPushSets = sets.filter(s => s.exercise === 'pushup');
-    // If sets array has data, use it for per-set reps
+    // If sets array has data, use reconciled reps
     if (wPullSets.length > 0) {
       wPullSets.forEach(s => { pullSets++; pullReps.push(s.reps || 0); });
     } else if ((w.pullTotal || 0) > 0) {
@@ -2516,7 +2547,7 @@ function computeWeeklyAssessment() {
     const dk = toLocalDateKey(w.date);
     const d = new Date(w.date);
     const totalReps = (w.pullTotal || 0) + (w.pushTotal || 0);
-    const sets = parseSets(w.sets);
+    const sets = reconciledSets(w);
 
     if (dk >= thisMondayKey) {
       thisWeekReps += totalReps;
@@ -3315,10 +3346,10 @@ function showDayDetail(dateKey) {
   dayWorkouts.forEach(w => {
     pullTotal += w.pullTotal || 0;
     pushTotal += w.pushTotal || 0;
-    const sets = parseSets(w.sets);
+    const sets = reconciledSets(w);
     const wPull = sets.filter(s => s.exercise === 'pullup');
     const wPush = sets.filter(s => s.exercise === 'pushup');
-    // Use sets array if available, otherwise synthesize from totals
+    // Use reconciled sets if available, otherwise synthesize from totals
     if (wPull.length > 0) wPull.forEach(s => allSets.push(s));
     else if ((w.pullTotal || 0) > 0) allSets.push({ exercise: 'pullup', variant: 'standard', reps: w.pullTotal });
     if (wPush.length > 0) wPush.forEach(s => allSets.push(s));
@@ -3373,7 +3404,7 @@ function renderBubbleTimeline() {
   todayWorkouts.forEach(w => {
     const wTime = new Date(w.date);
     const hours = wTime.getHours() + wTime.getMinutes() / 60;
-    const sets = parseSets(w.sets);
+    const sets = reconciledSets(w);
     const pullSets = sets.filter(s => s.exercise === 'pullup');
     const pushSets = sets.filter(s => s.exercise === 'pushup');
     const pullTotal = pullSets.reduce((a, s) => a + s.reps, 0);
@@ -3585,7 +3616,7 @@ async function renderLeaderboard() {
       // Best single set PRs
       let prPull = 0, prPush = 0;
       mWorkouts.forEach(w => {
-        const sets = parseSets(w.sets);
+        const sets = reconciledSets(w);
         sets.forEach(s => {
           if (s.exercise === 'pullup' && s.reps > prPull) prPull = s.reps;
           if (s.exercise === 'pushup' && s.reps > prPush) prPush = s.reps;
@@ -3863,13 +3894,14 @@ function renderHistory() {
     const d = new Date(w.date);
     const dateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + ' · ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
     let body = '';
+    const rSets = reconciledSets(w);
     if (w.pullTotal > 0) {
-      const ps = parseSets(w.sets).filter(s => s.exercise === 'pullup');
+      const ps = rSets.filter(s => s.exercise === 'pullup');
       body += `<div class="history-ex-label"><span class="ex-dot pullup"></span> Pull-Ups — <span class="history-total pullup">${w.pullTotal} reps</span></div>
         <div class="history-sets">${ps.map((s,j) => `Set ${j+1}: ${s.reps}${vLabel(s.variant)}${wLabel(s)}`).join(' · ')}</div>`;
     }
     if (w.pushTotal > 0) {
-      const us = parseSets(w.sets).filter(s => s.exercise === 'pushup');
+      const us = rSets.filter(s => s.exercise === 'pushup');
       body += `<div class="history-ex-label" style="margin-top:var(--space-2)"><span class="ex-dot pushup"></span> Push-Ups — <span class="history-total pushup">${w.pushTotal} reps</span></div>
         <div class="history-sets">${us.map((s,j) => `Set ${j+1}: ${s.reps}${vLabel(s.variant)}${wLabel(s)}`).join(' · ')}</div>`;
     }
@@ -5078,7 +5110,7 @@ function inferTiersFromHistory() {
   // Infer tiers from existing workout data
   let maxPull = 0, maxPush = 0;
   state.history.forEach(w => {
-    const sets = parseSets(w.sets);
+    const sets = reconciledSets(w);
     sets.forEach(s => {
       if (s.exercise === 'pullup' && s.reps > maxPull) maxPull = s.reps;
       if (s.exercise === 'pushup' && s.reps > maxPush) maxPush = s.reps;
@@ -5156,7 +5188,7 @@ function checkRepAdjustment() {
       const dayWorkouts = state.history.filter(w => toLocalDateKey(w.date) === dk);
       const exerciseSets = [];
       dayWorkouts.forEach(w => {
-        const sets = parseSets(w.sets);
+        const sets = reconciledSets(w);
         sets.forEach(s => {
           if (s.exercise === exercise) exerciseSets.push(s.reps);
         });
