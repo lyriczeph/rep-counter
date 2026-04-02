@@ -1955,10 +1955,20 @@ function generatePlan() {
 }
 
 function loadPlan() {
+  // Load cached plan to preserve block state, then always regenerate
+  // reps/schedule from current signals (tier, history, max test)
   try {
     const saved = localStorage.getItem('repcounter-plan');
-    if (saved) { state.plan = JSON.parse(saved); return state.plan; }
+    if (saved) {
+      const cached = JSON.parse(saved);
+      // Preserve block state so we don't lose phase progress
+      if (cached.block) {
+        if (!state.plan) state.plan = {};
+        state.plan.block = cached.block;
+      }
+    }
   } catch(e) {}
+  // Always recalculate reps and schedule from current data
   return generatePlan();
 }
 
