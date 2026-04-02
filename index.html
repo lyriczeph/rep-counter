@@ -1863,8 +1863,22 @@ function generatePlan() {
   const tiers = state.tiers || {};
   const pullTier = (tiers.pullup && tiers.pullup.tier) || 'beginner';
   const pushTier = (tiers.pushup && tiers.pushup.tier) || 'beginner';
-  const pullMax = (tiers.pullup && tiers.pullup.max > 0) ? tiers.pullup.max : TIER_EST_MAX[pullTier];
-  const pushMax = (tiers.pushup && tiers.pushup.max > 0) ? tiers.pushup.max : TIER_EST_MAX[pushTier];
+  // Use tier max if available, otherwise scan history for best set, otherwise estimate from tier
+  let pullMax = (tiers.pullup && tiers.pullup.max > 0) ? tiers.pullup.max : 0;
+  let pushMax = (tiers.pushup && tiers.pushup.max > 0) ? tiers.pushup.max : 0;
+  // If no tier max, scan workout history for actual best set
+  if (pullMax === 0 || pushMax === 0) {
+    state.history.forEach(w => {
+      const sets = Array.isArray(w.sets) ? w.sets : (typeof w.sets === 'string' ? JSON.parse(w.sets) : []);
+      sets.forEach(s => {
+        if (s.exercise === 'pullup' && s.reps > pullMax) pullMax = s.reps;
+        if (s.exercise === 'pushup' && s.reps > pushMax) pushMax = s.reps;
+      });
+    });
+  }
+  // Final fallback to tier estimate
+  if (pullMax === 0) pullMax = TIER_EST_MAX[pullTier];
+  if (pushMax === 0) pushMax = TIER_EST_MAX[pushTier];
   const isBeginner = pullTier === 'beginner' || pushTier === 'beginner';
 
   // Determine block tier and current phase
