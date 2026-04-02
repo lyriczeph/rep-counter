@@ -948,7 +948,7 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
     <div class="section-label">Timer</div>
     <div class="setting-row">
       <span class="setting-label">Rest timer (seconds)</span>
-      <div class="setting-control"><input type="number" id="restTime" value="90" min="0" max="600" step="15"></div>
+      <div class="setting-control"><input type="number" id="restTime" value="5" min="0" max="600" step="5"></div>
     </div>
     <div class="section-label">Goals</div>
     <div class="setting-row">
@@ -1814,9 +1814,9 @@ async function saveSettingsToCloud() {
 
 function saveState() { saveStateLocal(); }
 
-const defaults = { currentReps: 0, sets: [], setNumber: 1, history: [], restSeconds: 90, targetPullups: 10, targetPushups: 20, exercise: 'pullup', variant: 'standard', currentWeight: 10 };
+const defaults = { currentReps: 0, sets: [], setNumber: 1, history: [], restSeconds: 5, targetPullups: 10, targetPushups: 20, exercise: 'pullup', variant: 'standard', currentWeight: 10 };
 const saved = loadStateLocal() || {};
-let state = Object.assign({}, defaults, { history: saved.history || [], restSeconds: saved.restSeconds || 90, targetPullups: saved.targetPullups || 10, targetPushups: saved.targetPushups || 20 });
+let state = Object.assign({}, defaults, { history: saved.history || [], restSeconds: saved.restSeconds || 5, targetPullups: saved.targetPullups || 10, targetPushups: saved.targetPushups || 20 });
 
 // sets: [{reps, exercise, variant}]
 let restInterval = null;
@@ -3856,7 +3856,7 @@ function deleteWorkout(i) {
 document.getElementById('restTime').value = state.restSeconds;
 document.getElementById('targetPullups').value = state.targetPullups;
 document.getElementById('targetPushups').value = state.targetPushups;
-document.getElementById('restTime').addEventListener('change', e => { state.restSeconds = parseInt(e.target.value)||90; saveState(); saveSettingsToCloud(); });
+document.getElementById('restTime').addEventListener('change', e => { state.restSeconds = parseInt(e.target.value)||5; saveState(); saveSettingsToCloud(); });
 document.getElementById('targetPullups').addEventListener('change', e => { state.targetPullups = parseInt(e.target.value)||10; saveState(); saveSettingsToCloud(); });
 document.getElementById('targetPushups').addEventListener('change', e => { state.targetPushups = parseInt(e.target.value)||20; saveState(); saveSettingsToCloud(); });
 document.getElementById('clearHistory').addEventListener('click', () => { if (confirm('Clear all workout history?')) { state.history = []; saveState(); renderHistory(); } });
