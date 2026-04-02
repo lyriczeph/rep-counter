@@ -1759,7 +1759,11 @@ async function syncFromCloud() {
         id: r.id, date: r.date,
         sets: typeof r.sets === 'string' ? JSON.parse(r.sets) : r.sets,
         pullTotal: r.pull_total, pushTotal: r.push_total
-      }));
+      })).filter(w => {
+        // Exclude empty workouts (0 sets, 0 reps)
+        const sets = Array.isArray(w.sets) ? w.sets : [];
+        return sets.length > 0 || w.pullTotal > 0 || w.pushTotal > 0;
+      });
     }
     if (sRes.data) {
       state.restSeconds = sRes.data.rest_seconds || 5;
@@ -2157,31 +2161,7 @@ function renderDailyBriefing() {
     body = `<div class="briefing-plan">${prog.pullSets} pull-up sets · ${prog.pushSets} push-up sets · ${totalReps} total reps</div>Rest up. Tomorrow is a <strong>${tomorrow.day}</strong> day.`;
   }
 
-  // Debug: show raw data for troubleshooting
-  const todayKey = toLocalDateKey(new Date());
-  const todayWorkouts = state.history.filter(w => toLocalDateKey(w.date) === todayKey);
-  let debugPullSets = 0, debugPushSets = 0;
-  todayWorkouts.forEach(w => {
-    const sets = Array.isArray(w.sets) ? w.sets : (typeof w.sets === 'string' ? JSON.parse(w.sets) : []);
-    sets.forEach(s => { if (s.exercise === 'pullup') debugPullSets++; else debugPushSets++; });
-  });
-  // Detailed set dump
-  let setDump = '';
-  todayWorkouts.forEach((w, wi) => {
-    const sets = Array.isArray(w.sets) ? w.sets : (typeof w.sets === 'string' ? JSON.parse(w.sets) : []);
-    const time = new Date(w.date).toLocaleTimeString('en-US', {hour:'numeric',minute:'2-digit'});
-    setDump += `w${wi}(${time}) pT=${w.pullTotal} uT=${w.pushTotal} sets=${sets.length}: `;
-    sets.forEach(s => { setDump += `[${s.exercise}/${s.variant}:${s.reps}] `; });
-    setDump += '<br>';
-  });
-  const debugHtml = `<div style="font-size:0.55rem;color:var(--color-text-faint);margin-top:var(--space-2);font-family:monospace;line-height:1.4;word-break:break-all">
-    today=${todayKey} | workouts=${todayWorkouts.length} | history=${state.history.length}<br>
-    saved: pull=${debugPullSets} push=${debugPushSets} | unsaved: ${(state.sets||[]).length}<br>
-    getTodayProgress: pull=${prog.pullSets} push=${prog.pushSets}<br>
-    ---<br>${setDump}
-  </div>`;
-
-  el.innerHTML = `<div class="briefing-card"><div class="briefing-heading">${heading}</div><div class="briefing-body">${body}${btn}</div>${debugHtml}</div>`;
+  el.innerHTML = `<div class="briefing-card"><div class="briefing-heading">${heading}</div><div class="briefing-body">${body}${btn}</div></div>`;
 }
 
 // ─── GTG Philosophy ───
@@ -3853,7 +3833,10 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
 
 function renderHistory() {
   const c = document.getElementById('historyList');
-  let filtered = state.history;
+  let filtered = state.history.filter(w => {
+    const sets = Array.isArray(w.sets) ? w.sets : [];
+    return sets.length > 0 || w.pullTotal > 0 || w.pushTotal > 0;
+  });
   if (historyFilter === 'pullup') filtered = filtered.filter(w => w.pullTotal > 0);
   if (historyFilter === 'pushup') filtered = filtered.filter(w => w.pushTotal > 0);
   if (filtered.length === 0) {
