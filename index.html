@@ -431,13 +431,21 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
 
 /* Training plan week */
 .plan-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--space-1); margin-bottom: var(--space-4); }
-.plan-day { text-align: center; padding: var(--space-2) var(--space-1); border-radius: var(--radius-md); background: var(--color-surface); }
+.plan-day { text-align: center; padding: var(--space-2) var(--space-1); border-radius: var(--radius-md); background: var(--color-surface); cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform 120ms ease; }
+.plan-day:active { transform: scale(0.92); }
 .plan-day.today { outline: 2px solid var(--color-primary); outline-offset: -2px; }
 .plan-day.completed { background: var(--color-primary-highlight); }
 .plan-day.rest-day { opacity: 0.5; }
 .plan-day-label { font-size: 0.6rem; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase; margin-bottom: var(--space-1); }
 .plan-day-volume { font-size: 0.55rem; color: var(--color-text-faint); text-transform: uppercase; letter-spacing: 0.03em; }
 .plan-day-sets { font-size: var(--text-sm); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* Phase timeline */
+.phase-timeline { display: flex; gap: var(--space-1); margin-bottom: var(--space-3); flex-wrap: wrap; }
+.phase-pill { padding: var(--space-1) var(--space-3); border-radius: var(--radius-full); font-size: var(--text-xs); font-weight: 600; background: var(--color-surface-offset); color: var(--color-text-muted); }
+.phase-pill.current { background: var(--color-primary); color: var(--color-text-inverse); }
+.phase-pill.completed { background: var(--color-surface-offset); }
+.block-header { font-size: var(--text-sm); font-weight: 600; color: var(--color-text-muted); margin-bottom: var(--space-2); }
 
 /* Training plan today detail */
 .plan-today-detail { background: var(--color-surface); border-radius: var(--radius-lg); padding: var(--space-4); box-shadow: var(--shadow-sm); }
@@ -744,6 +752,7 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
 .next-set-bar-fill.done { background: var(--color-success); }
 .next-set-meta { font-size: var(--text-xs); color: var(--color-text-faint); line-height: 1.5; margin-bottom: var(--space-3); min-height: 1.2em; }
 .next-set-meta .warmup-note { color: var(--color-orange); font-weight: 500; }
+.next-set-tip { font-size: var(--text-xs); color: var(--color-text-muted); font-style: italic; max-width: 280px; line-height: 1.4; margin-bottom: var(--space-2); }
 .next-set-btn { width: 100%; padding: var(--space-3); border-radius: var(--radius-full); font-size: var(--text-sm); font-weight: 600; color: var(--color-text-inverse); background: var(--color-primary); min-height: 44px; transition: all var(--transition-interactive); }
 .next-set-btn:active { transform: scale(0.98); }
 .next-set-btn.push { background: var(--color-secondary); }
@@ -816,6 +825,7 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
   <div class="next-set-instruction" id="nextSetInstruction"></div>
   <div class="next-set-bar"><div class="next-set-bar-fill" id="nextSetBarFill"></div></div>
   <div class="next-set-meta" id="nextSetMeta"></div>
+  <div class="next-set-tip" id="nextSetTip"></div>
   <button class="next-set-btn" id="nextSetBtn">Start Set →</button>
 </div>
     <div class="exercise-picker">
@@ -1796,26 +1806,112 @@ const DAILY_SCHEDULE = ['medium','heavy','light','heavy','medium','light','rest'
 const SET_COUNTS = { rest: 0, light: 4, medium: 6, heavy: 8 };
 const TIER_EST_MAX = { beginner: 3, intermediate: 7, advanced: 15, hardcore: 25 };
 
+const TRAINING_BLOCKS = {
+  beginner: {
+    phases: [
+      { name: 'build', weeks: 3, description: 'Building the habit', schedule: ['medium','medium','light','medium','light','light','rest'], repFactor: 0.5 },
+      { name: 'push', weeks: 1, description: 'Pushing volume', schedule: ['medium','heavy','light','heavy','medium','light','rest'], repFactor: 0.5 },
+      { name: 'deload', weeks: 1, description: 'Recovery week', schedule: ['light','light','rest','light','light','rest','rest'], repFactor: 0.4 },
+      { name: 'test', weeks: 0, description: 'Retest your max' }
+    ]
+  },
+  intermediate: {
+    phases: [
+      { name: 'volume', weeks: 2, description: 'Volume focus', schedule: ['medium','heavy','medium','heavy','medium','light','rest'], repFactor: 0.5 },
+      { name: 'intensity', weeks: 2, description: 'Intensity focus', schedule: ['heavy','medium','heavy','medium','light','light','rest'], repFactor: 0.6 },
+      { name: 'deload', weeks: 1, description: 'Deload week', schedule: ['light','light','rest','light','light','rest','rest'], repFactor: 0.4 },
+      { name: 'test', weeks: 0, description: 'Retest your max' }
+    ]
+  },
+  advanced: {
+    phases: [
+      { name: 'volume', weeks: 2, description: 'Volume accumulation', schedule: ['heavy','heavy','medium','heavy','medium','light','rest'], repFactor: 0.5 },
+      { name: 'intensity', weeks: 1, description: 'Intensity peak', schedule: ['heavy','heavy','heavy','medium','light','light','rest'], repFactor: 0.6 },
+      { name: 'deload', weeks: 1, description: 'Neural recovery', schedule: ['light','light','rest','light','rest','rest','rest'], repFactor: 0.4 },
+      { name: 'test', weeks: 0, description: 'Retest your max' }
+    ]
+  },
+  hardcore: {
+    phases: [
+      { name: 'grind', weeks: 2, description: 'High-frequency grinding', schedule: ['heavy','heavy','heavy','heavy','medium','light','rest'], repFactor: 0.5 },
+      { name: 'deload', weeks: 1, description: 'Mandatory deload', schedule: ['light','rest','light','rest','light','rest','rest'], repFactor: 0.4 },
+      { name: 'test', weeks: 0, description: 'Retest your max' }
+    ]
+  }
+};
+
+function getBlockTier() {
+  const tiers = state.tiers || {};
+  const pullTier = (tiers.pullup && tiers.pullup.tier) || 'beginner';
+  const pushTier = (tiers.pushup && tiers.pushup.tier) || 'beginner';
+  const tierOrder = ['beginner', 'intermediate', 'advanced', 'hardcore'];
+  const pullIdx = tierOrder.indexOf(pullTier);
+  const pushIdx = tierOrder.indexOf(pushTier);
+  return tierOrder[Math.max(pullIdx, pushIdx)];
+}
+
+function getMondayDateKey() {
+  const now = new Date();
+  const dow = (now.getDay() + 6) % 7; // Mon=0
+  const monday = new Date(now);
+  monday.setDate(monday.getDate() - dow);
+  monday.setHours(0, 0, 0, 0);
+  return toLocalDateKey(monday);
+}
+
 function generatePlan() {
   const tiers = state.tiers || {};
   const pullTier = (tiers.pullup && tiers.pullup.tier) || 'beginner';
   const pushTier = (tiers.pushup && tiers.pushup.tier) || 'beginner';
   const pullMax = (tiers.pullup && tiers.pullup.max > 0) ? tiers.pullup.max : TIER_EST_MAX[pullTier];
   const pushMax = (tiers.pushup && tiers.pushup.max > 0) ? tiers.pushup.max : TIER_EST_MAX[pushTier];
-  const pullRPS = Math.max(1, Math.floor(pullMax * 0.5));
-  const pushRPS = Math.max(1, Math.floor(pushMax * 0.5));
   const isBeginner = pullTier === 'beginner' || pushTier === 'beginner';
 
-  const schedule = DAILY_SCHEDULE.map(day => {
+  // Determine block tier and current phase
+  const blockTier = getBlockTier();
+  const block = TRAINING_BLOCKS[blockTier];
+
+  // Initialize or preserve block state
+  let blockState;
+  if (state.plan && state.plan.block && state.plan.block.tier === blockTier) {
+    blockState = state.plan.block;
+  } else {
+    blockState = {
+      tier: blockTier,
+      phaseIndex: 0,
+      weekInPhase: 0,
+      startDate: getMondayDateKey(),
+      phaseName: block.phases[0].name,
+      phaseDescription: block.phases[0].description
+    };
+  }
+
+  // Get current phase
+  const phaseIndex = Math.min(blockState.phaseIndex, block.phases.length - 1);
+  const phase = block.phases[phaseIndex];
+
+  // Use phase schedule if available, else fallback
+  const phaseSchedule = phase.schedule || DAILY_SCHEDULE;
+  const repFactor = phase.repFactor || 0.5;
+
+  const pullRPS = Math.max(1, Math.floor(pullMax * repFactor));
+  const pushRPS = Math.max(1, Math.floor(pushMax * repFactor));
+
+  const schedule = phaseSchedule.map(day => {
     let sets = SET_COUNTS[day];
     if (isBeginner && day !== 'rest') sets = Math.max(2, sets - 2);
     return { day, pullSets: day === 'rest' ? 0 : sets, pushSets: day === 'rest' ? 0 : sets };
   });
 
+  // Update block state fields
+  blockState.phaseName = phase.name;
+  blockState.phaseDescription = phase.description;
+
   state.plan = {
     repsPerSet: { pullup: pullRPS, pushup: pushRPS },
     setsPerDay: { pullup: schedule[0].pullSets, pushup: schedule[0].pushSets },
-    schedule: schedule
+    schedule: schedule,
+    block: blockState
   };
   try { localStorage.setItem('repcounter-plan', JSON.stringify(state.plan)); } catch(e) {}
   return state.plan;
@@ -1827,6 +1923,82 @@ function loadPlan() {
     if (saved) { state.plan = JSON.parse(saved); return state.plan; }
   } catch(e) {}
   return generatePlan();
+}
+
+function checkPlanAdvancement() {
+  const plan = state.plan || loadPlan();
+  if (!plan.block) return;
+
+  const blockTier = plan.block.tier;
+  const block = TRAINING_BLOCKS[blockTier];
+  if (!block) return;
+
+  const currentMonday = getMondayDateKey();
+  const startDate = plan.block.startDate;
+
+  // Calculate weeks elapsed since block start
+  if (!startDate) return;
+  const startMs = new Date(startDate + 'T00:00:00').getTime();
+  const nowMs = new Date(currentMonday + 'T00:00:00').getTime();
+  const weeksElapsed = Math.floor((nowMs - startMs) / (7 * 24 * 60 * 60 * 1000));
+
+  // Count total weeks before current phase
+  let weeksBeforePhase = 0;
+  for (let i = 0; i < plan.block.phaseIndex; i++) {
+    weeksBeforePhase += block.phases[i].weeks || 0;
+  }
+
+  const weekInPhase = weeksElapsed - weeksBeforePhase;
+
+  // Check if we need to advance
+  const currentPhase = block.phases[plan.block.phaseIndex];
+  if (!currentPhase) return;
+
+  if (currentPhase.weeks > 0 && weekInPhase >= currentPhase.weeks) {
+    // Advance to next phase
+    const nextPhaseIndex = plan.block.phaseIndex + 1;
+    if (nextPhaseIndex < block.phases.length) {
+      const nextPhase = block.phases[nextPhaseIndex];
+      plan.block.phaseIndex = nextPhaseIndex;
+      plan.block.weekInPhase = 0;
+      plan.block.phaseName = nextPhase.name;
+      plan.block.phaseDescription = nextPhase.description;
+
+      if (nextPhase.name === 'test') {
+        // Show retest nudge, keep deload schedule
+        const retestNudge = document.getElementById('retestNudge');
+        if (retestNudge) retestNudge.classList.add('visible');
+        showToast('Block complete! Time to retest your max.');
+      } else {
+        showToast('New phase: ' + nextPhase.description);
+        // Regenerate plan with new phase schedule
+        generatePlan();
+      }
+    }
+  } else {
+    plan.block.weekInPhase = Math.max(0, weekInPhase);
+  }
+
+  try { localStorage.setItem('repcounter-plan', JSON.stringify(state.plan)); } catch(e) {}
+}
+
+function restartBlock() {
+  const blockTier = getBlockTier();
+  const block = TRAINING_BLOCKS[blockTier];
+  if (!block) return;
+
+  if (state.plan) {
+    state.plan.block = {
+      tier: blockTier,
+      phaseIndex: 0,
+      weekInPhase: 0,
+      startDate: getMondayDateKey(),
+      phaseName: block.phases[0].name,
+      phaseDescription: block.phases[0].description
+    };
+  }
+  generatePlan();
+  showToast('Training block restarted: ' + block.phases[0].description);
 }
 
 function getTodaySchedule() {
@@ -2007,6 +2179,38 @@ function renderTrainingPlan() {
   const dayLabels = ['M','T','W','T','F','S','S'];
   const volLabels = { rest: 'Rest', light: 'Light', medium: 'Med', heavy: 'Heavy' };
 
+  // Block header and phase timeline
+  let blockHtml = '';
+  if (plan.block) {
+    const blockTier = plan.block.tier;
+    const block = TRAINING_BLOCKS[blockTier];
+    if (block) {
+      // Calculate total weeks (excluding test phase)
+      const totalWeeks = block.phases.reduce((sum, p) => sum + (p.weeks || 0), 0);
+      // Calculate current overall week number
+      let weeksBefore = 0;
+      for (let i = 0; i < plan.block.phaseIndex; i++) {
+        weeksBefore += block.phases[i].weeks || 0;
+      }
+      const currentWeek = weeksBefore + (plan.block.weekInPhase || 0) + 1;
+
+      blockHtml += `<div class="block-header">Week ${Math.min(currentWeek, totalWeeks)} of ${totalWeeks} \u00B7 ${plan.block.phaseDescription}</div>`;
+
+      // Phase timeline pills (excluding 'test')
+      blockHtml += '<div class="phase-timeline">';
+      block.phases.forEach((phase, idx) => {
+        if (phase.name === 'test') return;
+        let pillClass = 'phase-pill';
+        if (idx < plan.block.phaseIndex) pillClass += ' completed';
+        else if (idx === plan.block.phaseIndex) pillClass += ' current';
+        const checkmark = idx < plan.block.phaseIndex ? '\u2713 ' : '';
+        const weeksLabel = phase.weeks === 1 ? '1 wk' : phase.weeks + ' wks';
+        blockHtml += `<span class="${pillClass}">${checkmark}${phase.description} (${weeksLabel})</span>`;
+      });
+      blockHtml += '</div>';
+    }
+  }
+
   // Weekly row
   let weekHtml = '<div class="plan-week">';
   weekDates.forEach((date, i) => {
@@ -2025,7 +2229,7 @@ function renderTrainingPlan() {
     if (isRest) cls += ' rest-day';
     if (isDone || (isPast && hasWorkout)) cls += ' completed';
 
-    weekHtml += `<div class="${cls}">`;
+    weekHtml += `<div class="${cls}" data-plan-day-idx="${i}" data-plan-date="${dateKey}">`;
     weekHtml += `<div class="plan-day-label">${dayLabels[i]}</div>`;
     if (isRest) {
       weekHtml += `<div class="plan-day-sets">—</div>`;
@@ -2042,7 +2246,7 @@ function renderTrainingPlan() {
   const todaySched = plan.schedule[todayDow];
   let detailHtml = '';
   if (todaySched.day === 'rest') {
-    detailHtml = '<div class="plan-today-detail"><div class="plan-today-header">🧘 Rest Day</div><div style="font-size:var(--text-sm);color:var(--color-text-muted)">No sets planned. Recover and come back tomorrow.</div></div>';
+    detailHtml = '<div class="plan-today-detail" id="planTodayDetail"><div class="plan-today-header">🧘 Rest Day</div><div style="font-size:var(--text-sm);color:var(--color-text-muted)">No sets planned. Recover and come back tomorrow.</div></div>';
   } else {
     const prog = getTodayProgress();
     // Also get individual set reps from today's history
@@ -2081,7 +2285,7 @@ function renderTrainingPlan() {
       return dots;
     }
 
-    detailHtml = `<div class="plan-today-detail">
+    detailHtml = `<div class="plan-today-detail" id="planTodayDetail">
       <div class="plan-today-header">Today — ${volLabels[todaySched.day]} Day</div>
       <div class="plan-today-row">
         <div class="plan-today-ex pull">Pull-ups</div>
@@ -2096,7 +2300,89 @@ function renderTrainingPlan() {
     </div>`;
   }
 
-  el.innerHTML = `<h3 style="font-size:var(--text-sm);font-weight:700;margin-bottom:var(--space-3)">This Week's Plan</h3>${weekHtml}${detailHtml}`;
+  el.innerHTML = `<h3 style="font-size:var(--text-sm);font-weight:700;margin-bottom:var(--space-3)">This Week's Plan</h3>${blockHtml}${weekHtml}${detailHtml}`;
+
+  // Clickable plan days
+  el.querySelectorAll('.plan-day').forEach(dayEl => {
+    dayEl.addEventListener('click', () => {
+      const idx = parseInt(dayEl.dataset.planDayIdx);
+      const dateKey = dayEl.dataset.planDate;
+      const isToday = idx === todayDow;
+      const isPast = idx < todayDow;
+      const isFuture = idx > todayDow;
+      const sched = plan.schedule[idx];
+      const isRest = sched.day === 'rest';
+
+      if (isToday) {
+        // Scroll to today detail section
+        const todayDetail = document.getElementById('planTodayDetail');
+        if (todayDetail) todayDetail.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+
+      if (isRest) {
+        showPlanDayOverlay(dateKey, 'rest', sched, plan);
+        return;
+      }
+
+      if (isPast) {
+        const dayProg = getDayProgress(dateKey);
+        const hasWorkout = dayProg.pullSets > 0 || dayProg.pushSets > 0;
+        if (hasWorkout) {
+          // Show day detail with logged sets
+          showDayDetail(dateKey);
+        } else {
+          showPlanDayOverlay(dateKey, 'missed', sched, plan);
+        }
+        return;
+      }
+
+      if (isFuture) {
+        showPlanDayOverlay(dateKey, 'future', sched, plan);
+      }
+    });
+  });
+}
+
+function showPlanDayOverlay(dateKey, mode, sched, plan) {
+  const overlay = document.getElementById('dayDetailOverlay');
+  const title = document.getElementById('dayDetailTitle');
+  const content = document.getElementById('dayDetailContent');
+  const d = new Date(dateKey + 'T12:00:00');
+  title.textContent = d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+  const volLabels = { rest: 'Rest', light: 'Light', medium: 'Medium', heavy: 'Heavy' };
+
+  if (mode === 'rest') {
+    content.innerHTML = '<div class="day-detail-empty" style="padding:var(--space-6)"><div style="font-size:var(--text-lg);margin-bottom:var(--space-2)">🧘</div><div style="font-weight:600;margin-bottom:var(--space-1)">Rest Day</div><div style="color:var(--color-text-muted)">No sets planned. Recovery is part of the program.</div></div>';
+  } else if (mode === 'missed') {
+    const pullSets = sched.pullSets;
+    const pushSets = sched.pushSets;
+    const pullRPS = plan.repsPerSet.pullup || 0;
+    const pushRPS = plan.repsPerSet.pushup || 0;
+    content.innerHTML = `<div class="day-detail-empty" style="padding:var(--space-6)">
+      <div style="font-weight:600;margin-bottom:var(--space-2)">No workout logged</div>
+      <div style="color:var(--color-text-muted);font-size:var(--text-sm);line-height:1.6">
+        <strong>${volLabels[sched.day]} Day</strong> was planned:<br>
+        ${pullSets} sets of ${pullRPS} pull-ups<br>
+        ${pushSets} sets of ${pushRPS} push-ups
+      </div>
+    </div>`;
+  } else if (mode === 'future') {
+    const pullSets = sched.pullSets;
+    const pushSets = sched.pushSets;
+    const pullRPS = plan.repsPerSet.pullup || 0;
+    const pushRPS = plan.repsPerSet.pushup || 0;
+    content.innerHTML = `<div class="day-detail-empty" style="padding:var(--space-6)">
+      <div style="font-weight:600;margin-bottom:var(--space-2)">${volLabels[sched.day]} Day</div>
+      <div style="color:var(--color-text-muted);font-size:var(--text-sm);line-height:1.6">
+        Planned prescription:<br>
+        <span style="color:var(--color-primary);font-weight:600">${pullSets} sets of ${pullRPS} pull-ups</span><br>
+        <span style="color:var(--color-secondary);font-weight:600">${pushSets} sets of ${pushRPS} push-ups</span>
+      </div>
+    </div>`;
+  }
+
+  overlay.classList.add('visible');
 }
 
 // ─── Progress Assessment ───
@@ -2242,25 +2528,82 @@ function renderAssessment() {
 }
 
 let pullCompletionToasted = false, pushCompletionToasted = false;
+let warmupDismissedToday = false;
 
-
-
-// ─── Completion Toast ───
-function checkExerciseCompletion() {
-  const prog = getTodayProgress();
-  const sched = getTodaySchedule();
-  if (sched.day === 'rest') return;
-  if (state.exercise === 'pullup' && prog.pullSets === sched.pullSets && !pullCompletionToasted) {
-    pullCompletionToasted = true;
-    if (prog.pushSets < sched.pushSets) {
-      showToast('Pull-up sets done! ' + (sched.pushSets - prog.pushSets) + ' push-up sets remaining.');
+function getOrCreateExerciseSuggestion() {
+  let el = document.getElementById('exerciseSuggestion');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'exerciseSuggestion';
+    el.style.cssText = 'text-align:center;padding:var(--space-3) var(--space-4);border-radius:var(--radius-lg);margin-bottom:var(--space-4);font-size:var(--text-sm);';
+    const panel = document.getElementById('panel-workout');
+    const picker = panel.querySelector('.exercise-picker');
+    if (picker) {
+      panel.insertBefore(el, picker);
+    } else {
+      panel.appendChild(el);
     }
   }
-  if (state.exercise === 'pushup' && prog.pushSets === sched.pushSets && !pushCompletionToasted) {
-    pushCompletionToasted = true;
-    if (prog.pullSets < sched.pullSets) {
-      showToast('Push-up sets done! ' + (sched.pullSets - prog.pullSets) + ' pull-up sets remaining.');
+  return el;
+}
+
+// ─── Completion Check + Suggestion Banner ───
+function checkExerciseCompletion() {
+  const sched = getTodaySchedule();
+  const prog = getTodayProgress();
+  if (sched.day === 'rest') return;
+
+  const pullTarget = sched.pullSets;
+  const pushTarget = sched.pushSets;
+  const pullDone = prog.pullSets >= pullTarget;
+  const pushDone = prog.pushSets >= pushTarget;
+  const el = getOrCreateExerciseSuggestion();
+
+  if (pullDone && pushDone) {
+    // ALL sets for BOTH exercises complete
+    const totalReps = prog.pullReps + prog.pushReps;
+    const tomorrow = getTomorrowSchedule();
+    el.style.background = 'color-mix(in oklch, var(--color-success) 15%, var(--color-surface))';
+    el.style.border = '1px solid var(--color-success)';
+    el.innerHTML = '🎉 All sets complete! <strong>' + totalReps + ' total reps</strong> today. Tomorrow is a <strong>' + tomorrow.day + '</strong> day.';
+    showToast('All daily sets complete! 💪', 3000);
+  } else if (pullDone && !pushDone) {
+    // Pull-ups done, push-ups remain
+    el.style.background = 'color-mix(in oklch, var(--color-success) 15%, var(--color-surface))';
+    el.style.border = '1px solid var(--color-success)';
+    el.innerHTML = '✓ Pull-ups done! Switch to push-ups? <button id="suggestionSwitchBtn" style="margin-left:var(--space-2);padding:var(--space-1) var(--space-3);border-radius:var(--radius-full);background:var(--color-secondary);color:var(--color-text-inverse);font-size:var(--text-xs);font-weight:600;border:none;cursor:pointer;min-height:32px">Switch</button>';
+    const switchBtn = document.getElementById('suggestionSwitchBtn');
+    if (switchBtn) {
+      switchBtn.addEventListener('click', () => {
+        setExercise('pushup');
+        document.getElementById('panel-workout').scrollTo({ top: 0, behavior: 'smooth' });
+        updateNextSetCard();
+        el.innerHTML = '';
+        el.style.background = '';
+        el.style.border = '';
+      });
     }
+  } else if (pushDone && !pullDone) {
+    // Push-ups done, pull-ups remain
+    el.style.background = 'color-mix(in oklch, var(--color-success) 15%, var(--color-surface))';
+    el.style.border = '1px solid var(--color-success)';
+    el.innerHTML = '✓ Push-ups done! Switch to pull-ups? <button id="suggestionSwitchBtn" style="margin-left:var(--space-2);padding:var(--space-1) var(--space-3);border-radius:var(--radius-full);background:var(--color-primary);color:var(--color-text-inverse);font-size:var(--text-xs);font-weight:600;border:none;cursor:pointer;min-height:32px">Switch</button>';
+    const switchBtn = document.getElementById('suggestionSwitchBtn');
+    if (switchBtn) {
+      switchBtn.addEventListener('click', () => {
+        setExercise('pullup');
+        document.getElementById('panel-workout').scrollTo({ top: 0, behavior: 'smooth' });
+        updateNextSetCard();
+        el.innerHTML = '';
+        el.style.background = '';
+        el.style.border = '';
+      });
+    }
+  } else {
+    // Neither condition met — clear
+    el.innerHTML = '';
+    el.style.background = '';
+    el.style.border = '';
   }
 }
 
@@ -2269,6 +2612,7 @@ let coachAnimatedToday = false;
 
 // ─── Navigation ───
 function renderCoachTab() {
+  checkPlanAdvancement();
   renderDailyBriefing();
   renderTrainingPlan();
   renderAssessment();
@@ -3358,6 +3702,7 @@ renderCalendar();
 
 // ─── Plan + Progress Init ───
 loadPlan();
+checkPlanAdvancement();
 setTimeout(() => updateNextSetCard(), 0);
 
 // ─── Auth Init ───
@@ -3509,16 +3854,20 @@ document.getElementById('nudgeInterval').addEventListener('change', (e) => {
   if (document.getElementById('nudgeToggle').checked) startNudgeTimer();
 });
 
-// Reset nudge timer whenever a workout is saved
+// Reset nudge timer and check rep adjustment whenever a workout is saved
 const origSaveWorkout = window.saveWorkout;
 window.saveWorkout = function() {
   origSaveWorkout();
   if (document.getElementById('nudgeToggle').checked) startNudgeTimer();
+  checkRepAdjustment();
 };
 
 
 // ─── Next Set Card ───
 let restCheckInterval = null;
+
+// Manual variant override flag — set true when user manually picks a variant, reset when exercise switches
+let manualVariantOverride = false;
 
 function getMinutesSinceLastSet() {
   const ts = localStorage.getItem('repcounter-lastset');
@@ -3558,16 +3907,12 @@ function getNextExercise() {
     }
   }
 
-  // Determine variant from tier
-  const tiers = state.tiers || {};
-  const tier = (tiers[exercise] && tiers[exercise].tier) || 'beginner';
+  // Use recommended variant from coaching engine (unless manually overridden)
   let variant;
-  if (tier === 'beginner') {
-    variant = exercise === 'pullup' ? 'eccentric' : 'standard';
-  } else if (tier === 'intermediate') {
-    variant = 'standard';
+  if (manualVariantOverride && state.exercise === exercise) {
+    variant = state.variant;
   } else {
-    variant = 'weighted';
+    variant = getRecommendedVariant(exercise);
   }
 
   return { exercise, variant, reps: plan.repsPerSet[exercise] || 0 };
@@ -3600,6 +3945,8 @@ function updateNextSetCard() {
     barFill.style.width = '0%';
     barFill.className = 'next-set-bar-fill';
     metaEl.textContent = 'No sets planned. Stretch, walk, come back stronger tomorrow.';
+    const tipElRest = document.getElementById('nextSetTip');
+    if (tipElRest) tipElRest.textContent = '';
     btn.classList.add('hidden');
     return;
   }
@@ -3609,12 +3956,15 @@ function updateNextSetCard() {
   if (!next) {
     labelEl.textContent = 'COMPLETE';
     progressEl.textContent = totalDone + '/' + totalTarget + ' sets';
-    instructionEl.textContent = '✅ All sets done — great work!';
+    const totalReps = prog.pullReps + prog.pushReps;
+    instructionEl.textContent = '🎉 All sets complete!';
     instructionEl.className = 'next-set-instruction done';
     barFill.style.width = '100%';
     barFill.className = 'next-set-bar-fill done';
     const tomorrow = getTomorrowSchedule();
-    metaEl.textContent = 'Rest up. Tomorrow is a ' + tomorrow.day + ' day.';
+    metaEl.innerHTML = '<strong>' + totalReps + ' total reps</strong> today. Tomorrow is a <strong>' + tomorrow.day + '</strong> day.';
+    const tipElDone = document.getElementById('nextSetTip');
+    if (tipElDone) tipElDone.textContent = '';
     btn.classList.add('hidden');
     return;
   }
@@ -3625,16 +3975,21 @@ function updateNextSetCard() {
   const exClass = next.exercise === 'pullup' ? 'pull' : 'push';
   const variantLabel = (VARIANT_LABELS && VARIANT_LABELS[next.variant]) ? VARIANT_LABELS[next.variant] : next.variant;
   const barPct = totalTarget > 0 ? Math.round((totalDone / totalTarget) * 100) : 0;
+  const tipKey = next.exercise + '_' + next.variant;
+  const tipText = VARIANT_TIPS[tipKey] || '';
+  const tipEl = document.getElementById('nextSetTip');
 
   // RESTING (< 15 min since last set and not first set)
   if (minSince < 15 && !isFirstSet) {
     labelEl.textContent = 'RESTING';
     progressEl.textContent = totalDone + '/' + totalTarget + ' sets';
-    instructionEl.textContent = 'Next: ' + next.reps + ' ' + exLabel + ' (' + variantLabel + ')';
+    const instrText = next.variant === 'standard' ? next.reps + ' \u00D7 ' + exLabel : next.reps + ' \u00D7 ' + variantLabel + ' ' + exLabel;
+    instructionEl.textContent = instrText;
     instructionEl.className = 'next-set-instruction resting';
     barFill.style.width = barPct + '%';
     barFill.className = 'next-set-bar-fill ' + exClass;
     metaEl.textContent = minSince + ' min since last set — rest a bit more';
+    if (tipEl) tipEl.textContent = tipText;
     btn.textContent = 'Rest a bit more...';
     btn.classList.remove('hidden');
     btn.classList.remove('push');
@@ -3654,10 +4009,12 @@ function updateNextSetCard() {
   // READY
   labelEl.textContent = 'NEXT UP';
   progressEl.textContent = totalDone + '/' + totalTarget + ' sets';
-  instructionEl.textContent = next.reps + ' ' + exLabel + ' (' + variantLabel + ')';
+  const readyInstrText = next.variant === 'standard' ? next.reps + ' \u00D7 ' + exLabel : next.reps + ' \u00D7 ' + variantLabel + ' ' + exLabel;
+  instructionEl.textContent = readyInstrText;
   instructionEl.className = 'next-set-instruction ' + exClass;
   barFill.style.width = barPct + '%';
   barFill.className = 'next-set-bar-fill ' + exClass;
+  if (tipEl) tipEl.textContent = tipText;
 
   // Warmup note for beginner/intermediate first set
   let metaText = '';
@@ -3674,7 +4031,7 @@ function updateNextSetCard() {
   }
   metaEl.innerHTML = metaText;
 
-  btn.textContent = 'Start Set →';
+  btn.textContent = isFirstSet ? 'Start First Set →' : 'Start Set →';
   btn.classList.remove('hidden');
   btn.disabled = false;
   if (next.exercise === 'pushup') {
@@ -3703,6 +4060,60 @@ document.getElementById('nextSetBtn').addEventListener('click', () => {
     if (addRepEl) addRepEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, 50);
 });
+
+// ─── Warm-up Prompt ───
+function getOrCreateWarmupPrompt() {
+  let el = document.getElementById('warmupPrompt');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'warmupPrompt';
+    el.style.cssText = 'display:none;text-align:center;padding:var(--space-3) var(--space-4);border-radius:var(--radius-lg);margin-bottom:var(--space-4);font-size:var(--text-sm);background:color-mix(in oklch, var(--color-orange) 12%, var(--color-surface));border:1px solid var(--color-orange);';
+    el.innerHTML = '<div style="margin-bottom:var(--space-2);font-weight:600;color:var(--color-orange)">💪 Warm Up First</div>' +
+      '<div style="color:var(--color-text-muted);margin-bottom:var(--space-3)">Arm circles, scapular pull-ups, then 1 easy set before going all in.</div>' +
+      '<button id="warmupDismissBtn" style="padding:var(--space-2) var(--space-4);border-radius:var(--radius-full);background:var(--color-orange);color:var(--color-text-inverse);font-size:var(--text-sm);font-weight:600;border:none;cursor:pointer;min-height:36px">I\'m Warmed Up</button>';
+    const panel = document.getElementById('panel-workout');
+    const counterSection = panel.querySelector('.counter-section');
+    if (counterSection) {
+      panel.insertBefore(el, counterSection);
+    } else {
+      panel.appendChild(el);
+    }
+    document.getElementById('warmupDismissBtn').addEventListener('click', () => {
+      warmupDismissedToday = true;
+      el.style.display = 'none';
+    });
+  }
+  return el;
+}
+
+function isFirstSetOfDay() {
+  const prog = getTodayProgress();
+  return prog.pullSets === 0 && prog.pushSets === 0 && (!state.sets || state.sets.length === 0);
+}
+
+function maybeShowWarmupPrompt() {
+  if (warmupDismissedToday) return;
+  if (!isFirstSetOfDay()) return;
+  const el = getOrCreateWarmupPrompt();
+  el.style.display = 'block';
+}
+
+// Show warmup on TAP (addRep) press for first set of day
+(function() {
+  const addRepBtn = document.getElementById('addRep');
+  addRepBtn.addEventListener('click', () => {
+    maybeShowWarmupPrompt();
+  }, { capture: true });
+})();
+
+// Show warmup when nextSetBtn is clicked for first set
+(function() {
+  const nextBtn = document.getElementById('nextSetBtn');
+  const origHandler = nextBtn.onclick;
+  nextBtn.addEventListener('click', () => {
+    maybeShowWarmupPrompt();
+  }, { capture: true });
+})();
 
 // ═══════════════════════════════════════════════════════
 // ─── TIER PROGRESSION SYSTEM ───
@@ -3743,6 +4154,40 @@ const VARIANT_LABELS = {
   wall: 'Wall', incline: 'Incline', knee: 'Knee', eccentric_timed: 'Eccentric',
   decline: 'Decline', tempo: 'Tempo', pike: 'Pike', deficit: 'Deficit',
   onearm: 'One-Arm', planche: 'Planche', handstand: 'Handstand'
+};
+
+const VARIANT_TIPS = {
+  pullup_standard: 'Full range of motion. Dead hang to chin over bar.',
+  pullup_eccentric: 'Jump up, lower slowly for 5 seconds each rep.',
+  pullup_weighted: 'Start light. Add 5 lbs when sets feel easy.',
+  pullup_dead_hang: 'Active shoulders. Build grip and hang time.',
+  pullup_band_assisted: 'Lightest band where you complete all reps.',
+  pullup_inverted_row: 'Body at 45\u00B0. Pull chest to the bar.',
+  pullup_chinup: 'Palms toward you. Great bicep recruitment.',
+  pullup_neutral: 'Palms facing each other. Easier on shoulders.',
+  pullup_close_grip: 'Hands 6 inches apart. Lower lats and biceps.',
+  pullup_wide: 'Hands wider than shoulders. Emphasizes lats.',
+  pullup_slow_tempo: '3 seconds up, 3 seconds down. Control the movement.',
+  pullup_archer: 'Shift to one side at the top. Unilateral strength.',
+  pullup_lsit: 'Hold legs at 90\u00B0. Brutal on the core.',
+  pullup_typewriter: 'Pull up, shift side to side at the top.',
+  pullup_towel: 'Grip the towels, not the bar. Forearm killer.',
+  pushup_standard: 'Hands shoulder-width. Full chest-to-floor range.',
+  pushup_diamond: 'Hands together under chest. Elbows stay close.',
+  pushup_archer: 'Shift weight to one arm. Alternate sides.',
+  pushup_weighted: 'Plate on upper back. Keep core tight.',
+  pushup_pike: 'Hips high, head toward floor. Shoulder press motion.',
+  pushup_deficit: 'Hands on blocks for extra range of motion.',
+  pushup_wide: 'Hands wider than shoulders. Chest focused.',
+  pushup_decline: 'Feet elevated. More load on upper chest.',
+  pushup_tempo: '3 seconds down, pause, 3 seconds up.',
+  pushup_wall: 'Stand at arm length from wall. Great for beginners.',
+  pushup_incline: 'Hands on bench. Easier than floor push-ups.',
+  pushup_knee: 'Knees on ground. Master form before progressing.',
+  pushup_eccentric_timed: 'Lower slowly for 5 seconds. Build strength.',
+  pushup_onearm: 'Wide stance, one arm. Ultimate chest builder.',
+  pushup_planche: 'Lean forward, hands by hips. Extreme difficulty.',
+  pushup_handstand: 'Against wall, press from head level. All shoulders.',
 };
 
 // ─── Tier State Management ───
@@ -3921,10 +4366,15 @@ window.setExercise = function(ex) {
   vs.querySelectorAll('.type-btn').forEach(b => b.addEventListener('click', () => {
     vs.querySelectorAll('.type-btn').forEach(x => x.classList.remove('active'));
     b.classList.add('active'); state.variant = b.dataset.type;
+    manualVariantOverride = true;
     updateWeightVisibility();
     updateExerciseHero();
     updateTimedMode();
+    updateNextSetCard();
   }));
+
+  // Reset manual override when exercise switches
+  manualVariantOverride = false;
 
   document.querySelector('.rest-timer').style.color = ex === 'pullup' ? 'var(--color-primary)' : 'var(--color-secondary)';
   updateWeightVisibility();
@@ -4143,6 +4593,9 @@ document.getElementById('mtDoneBtn').addEventListener('click', () => {
   setExercise(state.exercise);
   renderTierProgressCard();
   renderTierSettings();
+  // Restart training block after max test completes
+  restartBlock();
+  checkPlanAdvancement();
 });
 
 // ─── Auto-Detection After finishSet ───
@@ -4205,6 +4658,8 @@ document.getElementById('autodetectYes').addEventListener('click', () => {
     showToast('New max recorded! Tier updated to ' + newTier + '.');
     renderTierProgressCard();
     renderTierSettings();
+    // Restart training block on tier change from auto-detection
+    restartBlock();
   }
 });
 
@@ -4288,6 +4743,8 @@ function renderTierSettings() {
       setExercise(state.exercise);
       renderTierSettings();
       renderTierProgressCard();
+      // Restart training block on tier change
+      restartBlock();
     });
   });
 
@@ -4386,6 +4843,8 @@ function showGtgTip() {
     renderTierSettings();
     checkRetestNudge();
     showGtgTip();
+    // Check rep adjustment on app load
+    checkRepAdjustment();
     // Apply tier filtering to current exercise
     if (state.tiers && state.tiers.assessed) {
       setExercise(state.exercise);
@@ -4437,6 +4896,173 @@ document.querySelectorAll('.nav-item').forEach(item => {
     if (item.dataset.nav === 'workout') { checkRetestNudge(); showGtgTip(); }
   });
 });
+
+// ═══════════════════════════════════════════════════════
+// ─── AUTO-ADJUST REPS + VARIANT COACHING ───
+// ═══════════════════════════════════════════════════════
+
+// ─── checkRepAdjustment(): auto-adjust reps/set based on performance ───
+function checkRepAdjustment() {
+  const plan = state.plan || loadPlan();
+  if (!plan || !plan.repsPerSet) return;
+
+  // Load nudge state
+  let nudgeState;
+  try {
+    nudgeState = JSON.parse(localStorage.getItem('repcounter_rep_nudge') || '{}');
+  } catch(e) { nudgeState = {}; }
+  if (!nudgeState.lastNudge) nudgeState.lastNudge = {};
+
+  // Gather all sets from last 5 ACTIVE (non-rest) workout days
+  const allDayKeys = new Set();
+  state.history.forEach(w => allDayKeys.add(toLocalDateKey(w.date)));
+  const sortedDays = Array.from(allDayKeys).sort().reverse();
+
+  // Filter to active days only (days where sets were actually done)
+  const activeDays = sortedDays.filter(dk => {
+    const dayWorkouts = state.history.filter(w => toLocalDateKey(w.date) === dk);
+    let hasSets = false;
+    dayWorkouts.forEach(w => {
+      const sets = Array.isArray(w.sets) ? w.sets : (typeof w.sets === 'string' ? JSON.parse(w.sets) : []);
+      if (sets.length > 0) hasSets = true;
+    });
+    return hasSets;
+  });
+
+  const last5Days = activeDays.slice(0, 5);
+  if (last5Days.length < 3) return; // Need at least 3 days of data
+
+  ['pullup', 'pushup'].forEach(exercise => {
+    const targetRPS = plan.repsPerSet[exercise];
+    if (!targetRPS || targetRPS <= 0) return;
+
+    // Check nudge throttle: only once per 7 days per exercise
+    const lastNudgeDate = nudgeState.lastNudge[exercise];
+    if (lastNudgeDate) {
+      const daysSinceNudge = Math.floor((Date.now() - new Date(lastNudgeDate + 'T12:00:00').getTime()) / 86400000);
+      if (daysSinceNudge < 7) return;
+    }
+
+    // Calculate avg reps/set per day for this exercise
+    const dailyAvgs = [];
+    last5Days.forEach(dk => {
+      const dayWorkouts = state.history.filter(w => toLocalDateKey(w.date) === dk);
+      const exerciseSets = [];
+      dayWorkouts.forEach(w => {
+        const sets = Array.isArray(w.sets) ? w.sets : (typeof w.sets === 'string' ? JSON.parse(w.sets) : []);
+        sets.forEach(s => {
+          if (s.exercise === exercise) exerciseSets.push(s.reps);
+        });
+      });
+      if (exerciseSets.length > 0) {
+        const avg = exerciseSets.reduce((a, b) => a + b, 0) / exerciseSets.length;
+        dailyAvgs.push(avg);
+      }
+    });
+
+    if (dailyAvgs.length < 3) return;
+
+    const exLabel = exercise === 'pullup' ? 'pull-up' : 'push-up';
+    const overallAvg = dailyAvgs.reduce((a, b) => a + b, 0) / dailyAvgs.length;
+
+    // Creep detection: avg > target + 1 for 5 consecutive active days
+    if (dailyAvgs.length >= 5) {
+      const allAbove = dailyAvgs.slice(0, 5).every(avg => avg > targetRPS + 1);
+      if (allAbove) {
+        const avgRound = Math.round(overallAvg * 10) / 10;
+        showToast('Your ' + exLabel + ' sets are averaging ' + avgRound + ' reps \u2014 time to retest?', 4000);
+        nudgeState.lastNudge[exercise] = toLocalDateKey(new Date());
+        try { localStorage.setItem('repcounter_rep_nudge', JSON.stringify(nudgeState)); } catch(e) {}
+        return;
+      }
+    }
+
+    // Struggle detection: avg < target - 1 for 3 consecutive active days
+    const last3Avgs = dailyAvgs.slice(0, 3);
+    const allBelow = last3Avgs.every(avg => avg < targetRPS - 1);
+    if (allBelow) {
+      const newRPS = Math.floor(overallAvg);
+      if (newRPS > 0 && newRPS < targetRPS) {
+        showToast('Sets feeling tough? Dropping to ' + newRPS + ' reps is fine.', 4000);
+        plan.repsPerSet[exercise] = newRPS;
+        try { localStorage.setItem('repcounter-plan', JSON.stringify(plan)); } catch(e) {}
+        nudgeState.lastNudge[exercise] = toLocalDateKey(new Date());
+        try { localStorage.setItem('repcounter_rep_nudge', JSON.stringify(nudgeState)); } catch(e) {}
+      }
+    }
+  });
+}
+
+// ─── getRecommendedVariant(exercise): variant coaching engine ───
+function getRecommendedVariant(exercise) {
+  const tiers = state.tiers || {};
+  const tierData = tiers[exercise];
+  const tier = (tierData && tierData.tier) || 'beginner';
+  const max = (tierData && tierData.max) || 0;
+  const dayOfWeek = new Date().getDay(); // 0=Sun ... 6=Sat
+
+  // Saturday/Sunday fallback
+  if (dayOfWeek === 0 || dayOfWeek === 6) return 'standard';
+
+  if (exercise === 'pullup') {
+    if (tier === 'beginner') {
+      if (max < 1) {
+        // deadhang/band alternating: Mon/Wed/Fri=dead_hang, Tue/Thu=band_assisted
+        return (dayOfWeek === 1 || dayOfWeek === 3 || dayOfWeek === 5) ? 'dead_hang' : 'band_assisted';
+      } else if (max <= 3) {
+        // eccentric/band: Mon/Wed/Fri=eccentric, Tue/Thu=band_assisted
+        return (dayOfWeek === 1 || dayOfWeek === 3 || dayOfWeek === 5) ? 'eccentric' : 'band_assisted';
+      } else {
+        return 'standard';
+      }
+    } else if (tier === 'intermediate') {
+      // standard Mon/Wed/Fri, chinup Tue, neutral Thu
+      if (dayOfWeek === 2) return 'chinup';
+      if (dayOfWeek === 4) return 'neutral';
+      return 'standard';
+    } else if (tier === 'advanced') {
+      // standard Mon/Fri, weighted Tue/Thu, close_grip Wed
+      if (dayOfWeek === 2 || dayOfWeek === 4) return 'weighted';
+      if (dayOfWeek === 3) return 'close_grip';
+      return 'standard';
+    } else if (tier === 'hardcore') {
+      // weighted Mon/Wed/Fri, typewriter Tue, archer Thu
+      if (dayOfWeek === 2) return 'typewriter';
+      if (dayOfWeek === 4) return 'archer';
+      return 'weighted';
+    }
+  } else {
+    // pushup
+    if (tier === 'beginner') {
+      if (max < 5) {
+        return 'standard';
+      } else {
+        // standard most days + diamond Friday
+        if (dayOfWeek === 5) return 'diamond';
+        return 'standard';
+      }
+    } else if (tier === 'intermediate') {
+      // standard Mon/Wed/Fri, diamond Tue, wide Thu
+      if (dayOfWeek === 2) return 'diamond';
+      if (dayOfWeek === 4) return 'wide';
+      return 'standard';
+    } else if (tier === 'advanced') {
+      // standard Mon/Wed, weighted Tue, archer Thu, pike Fri
+      if (dayOfWeek === 2) return 'weighted';
+      if (dayOfWeek === 4) return 'archer';
+      if (dayOfWeek === 5) return 'pike';
+      return 'standard';
+    } else if (tier === 'hardcore') {
+      // weighted Mon/Wed, archer Tue, pike Thu, planche Fri
+      if (dayOfWeek === 2) return 'archer';
+      if (dayOfWeek === 4) return 'pike';
+      if (dayOfWeek === 5) return 'planche';
+      return 'weighted';
+    }
+  }
+
+  return 'standard';
+}
 
 // Figure preference
 (function initFigureToggle() {
