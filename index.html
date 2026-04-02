@@ -1273,7 +1273,7 @@ function computeAchievementStats() {
     workoutDays.add(dayKey);
     if (!dayWorkouts[dayKey]) dayWorkouts[dayKey] = [];
     dayWorkouts[dayKey].push(w);
-    const sets = Array.isArray(w.sets) ? w.sets : (typeof w.sets === 'string' ? JSON.parse(w.sets) : []);
+    const sets = parseSets(w.sets);
 
     totalPull += w.pullTotal || 0;
     totalPush += w.pushTotal || 0;
@@ -1301,7 +1301,7 @@ function computeAchievementStats() {
   Object.values(dayWorkouts).forEach(dayW => {
     let daySets10Plus = 0;
     dayW.forEach(w => {
-      const sets = Array.isArray(w.sets) ? w.sets : (typeof w.sets === 'string' ? JSON.parse(w.sets) : []);
+      const sets = parseSets(w.sets);
       sets.forEach(s => {
         if (s.exercise === 'pullup' && s.reps >= 10) daySets10Plus++;
       });
@@ -1871,7 +1871,7 @@ function getEffectiveMax(exercise) {
   const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 14);
   state.history.forEach(w => {
     if (new Date(w.date) < cutoff) return;
-    const sets = Array.isArray(w.sets) ? w.sets : (typeof w.sets === 'string' ? JSON.parse(w.sets) : []);
+    const sets = parseSets(w.sets);
     sets.forEach(s => {
       if (s.exercise === exercise && s.reps > bestRecent) bestRecent = s.reps;
     });
@@ -2516,7 +2516,7 @@ function computeWeeklyAssessment() {
     const dk = toLocalDateKey(w.date);
     const d = new Date(w.date);
     const totalReps = (w.pullTotal || 0) + (w.pushTotal || 0);
-    const sets = Array.isArray(w.sets) ? w.sets : (typeof w.sets === 'string' ? JSON.parse(w.sets) : []);
+    const sets = parseSets(w.sets);
 
     if (dk >= thisMondayKey) {
       thisWeekReps += totalReps;
@@ -3315,8 +3315,14 @@ function showDayDetail(dateKey) {
   dayWorkouts.forEach(w => {
     pullTotal += w.pullTotal || 0;
     pushTotal += w.pushTotal || 0;
-    const sets = Array.isArray(w.sets) ? w.sets : (typeof w.sets === 'string' ? JSON.parse(w.sets) : []);
-    sets.forEach(s => allSets.push(s));
+    const sets = parseSets(w.sets);
+    const wPull = sets.filter(s => s.exercise === 'pullup');
+    const wPush = sets.filter(s => s.exercise === 'pushup');
+    // Use sets array if available, otherwise synthesize from totals
+    if (wPull.length > 0) wPull.forEach(s => allSets.push(s));
+    else if ((w.pullTotal || 0) > 0) allSets.push({ exercise: 'pullup', variant: 'standard', reps: w.pullTotal });
+    if (wPush.length > 0) wPush.forEach(s => allSets.push(s));
+    else if ((w.pushTotal || 0) > 0) allSets.push({ exercise: 'pushup', variant: 'standard', reps: w.pushTotal });
   });
 
   const vLabel = (v) => variantLabelShort(v);
@@ -3367,7 +3373,7 @@ function renderBubbleTimeline() {
   todayWorkouts.forEach(w => {
     const wTime = new Date(w.date);
     const hours = wTime.getHours() + wTime.getMinutes() / 60;
-    const sets = Array.isArray(w.sets) ? w.sets : (typeof w.sets === 'string' ? JSON.parse(w.sets) : []);
+    const sets = parseSets(w.sets);
     const pullSets = sets.filter(s => s.exercise === 'pullup');
     const pushSets = sets.filter(s => s.exercise === 'pushup');
     const pullTotal = pullSets.reduce((a, s) => a + s.reps, 0);
@@ -3579,7 +3585,7 @@ async function renderLeaderboard() {
       // Best single set PRs
       let prPull = 0, prPush = 0;
       mWorkouts.forEach(w => {
-        const sets = typeof w.sets === 'string' ? JSON.parse(w.sets) : (w.sets || []);
+        const sets = parseSets(w.sets);
         sets.forEach(s => {
           if (s.exercise === 'pullup' && s.reps > prPull) prPull = s.reps;
           if (s.exercise === 'pushup' && s.reps > prPush) prPush = s.reps;
@@ -3841,7 +3847,7 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
 function renderHistory() {
   const c = document.getElementById('historyList');
   let filtered = state.history.filter(w => {
-    const sets = Array.isArray(w.sets) ? w.sets : [];
+    const sets = parseSets(w.sets);
     return sets.length > 0 || w.pullTotal > 0 || w.pushTotal > 0;
   });
   if (historyFilter === 'pullup') filtered = filtered.filter(w => w.pullTotal > 0);
@@ -3858,12 +3864,12 @@ function renderHistory() {
     const dateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + ' · ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
     let body = '';
     if (w.pullTotal > 0) {
-      const ps = w.sets.filter(s => s.exercise === 'pullup');
+      const ps = parseSets(w.sets).filter(s => s.exercise === 'pullup');
       body += `<div class="history-ex-label"><span class="ex-dot pullup"></span> Pull-Ups — <span class="history-total pullup">${w.pullTotal} reps</span></div>
         <div class="history-sets">${ps.map((s,j) => `Set ${j+1}: ${s.reps}${vLabel(s.variant)}${wLabel(s)}`).join(' · ')}</div>`;
     }
     if (w.pushTotal > 0) {
-      const us = w.sets.filter(s => s.exercise === 'pushup');
+      const us = parseSets(w.sets).filter(s => s.exercise === 'pushup');
       body += `<div class="history-ex-label" style="margin-top:var(--space-2)"><span class="ex-dot pushup"></span> Push-Ups — <span class="history-total pushup">${w.pushTotal} reps</span></div>
         <div class="history-sets">${us.map((s,j) => `Set ${j+1}: ${s.reps}${vLabel(s.variant)}${wLabel(s)}`).join(' · ')}</div>`;
     }
@@ -4091,7 +4097,7 @@ function getNextExercise() {
       const todayWorkouts = state.history.filter(w => toLocalDateKey(w.date) === todayKey);
       let lastHistEx = null;
       todayWorkouts.forEach(w => {
-        const sets = Array.isArray(w.sets) ? w.sets : (typeof w.sets === 'string' ? JSON.parse(w.sets) : []);
+        const sets = parseSets(w.sets);
         if (sets.length > 0) lastHistEx = sets[sets.length - 1].exercise;
       });
       exercise = lastHistEx === 'pullup' ? 'pushup' : 'pullup';
@@ -5072,7 +5078,7 @@ function inferTiersFromHistory() {
   // Infer tiers from existing workout data
   let maxPull = 0, maxPush = 0;
   state.history.forEach(w => {
-    const sets = Array.isArray(w.sets) ? w.sets : (typeof w.sets === 'string' ? JSON.parse(w.sets) : []);
+    const sets = parseSets(w.sets);
     sets.forEach(s => {
       if (s.exercise === 'pullup' && s.reps > maxPull) maxPull = s.reps;
       if (s.exercise === 'pushup' && s.reps > maxPush) maxPush = s.reps;
@@ -5124,7 +5130,7 @@ function checkRepAdjustment() {
     const dayWorkouts = state.history.filter(w => toLocalDateKey(w.date) === dk);
     let hasSets = false;
     dayWorkouts.forEach(w => {
-      const sets = Array.isArray(w.sets) ? w.sets : (typeof w.sets === 'string' ? JSON.parse(w.sets) : []);
+      const sets = parseSets(w.sets);
       if (sets.length > 0) hasSets = true;
     });
     return hasSets;
@@ -5150,7 +5156,7 @@ function checkRepAdjustment() {
       const dayWorkouts = state.history.filter(w => toLocalDateKey(w.date) === dk);
       const exerciseSets = [];
       dayWorkouts.forEach(w => {
-        const sets = Array.isArray(w.sets) ? w.sets : (typeof w.sets === 'string' ? JSON.parse(w.sets) : []);
+        const sets = parseSets(w.sets);
         sets.forEach(s => {
           if (s.exercise === exercise) exerciseSets.push(s.reps);
         });
