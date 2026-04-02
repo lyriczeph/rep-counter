@@ -468,6 +468,22 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
 .plan-dot.done.push { background: var(--color-secondary-highlight); color: var(--color-secondary); }
 .plan-today-summary { font-size: var(--text-xs); font-weight: 600; flex-shrink: 0; width: 48px; text-align: right; }
 
+/* Assessment */
+.assessment-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); margin-bottom: var(--space-4); }
+.assessment-metric { text-align: center; padding: var(--space-3) var(--space-2); background: var(--color-surface-offset); border-radius: var(--radius-md); }
+.assessment-metric-value { font-size: var(--text-lg); font-weight: 700; font-variant-numeric: tabular-nums; }
+.assessment-metric-label { font-size: 0.6rem; color: var(--color-text-muted); font-weight: 500; margin-top: var(--space-1); }
+.assessment-trend { font-size: var(--text-xs); font-weight: 600; }
+.assessment-trend.up { color: var(--color-success); }
+.assessment-trend.down { color: var(--color-error); }
+.assessment-trend.flat { color: var(--color-text-muted); }
+.assessment-message { padding: var(--space-3) var(--space-4); background: var(--color-surface); border-radius: var(--radius-md);
+  font-size: var(--text-sm); line-height: 1.6; color: var(--color-text-muted); }
+.assessment-message strong { color: var(--color-text); }
+.assessment-message .msg-action { display: inline-block; margin-top: var(--space-2); font-size: var(--text-xs);
+  font-weight: 600; color: var(--color-primary); cursor: pointer; }
+.assessment-message .msg-action:hover { color: var(--color-primary-hover); }
+
 /* History overlay */
 .history-overlay { position: fixed; inset: 0; background: oklch(from var(--color-bg) l c h / 0.96);
   backdrop-filter: blur(8px); z-index: 100; display: none; flex-direction: column;
@@ -2088,10 +2104,153 @@ function renderTrainingPlan() {
   el.innerHTML = `<h3 style="font-size:var(--text-sm);font-weight:700;margin-bottom:var(--space-3)">This Week's Plan</h3>${weekHtml}${detailHtml}`;
 }
 
+// ─── Progress Assessment ───
+function getMonday(date) {
+  const d = new Date(date); d.setHours(0,0,0,0);
+  const dow = (d.getDay() + 6) % 7;
+  d.setDate(d.getDate() - dow);
+  return d;
+}
+
+function computeWeeklyAssessment() {
+  const plan = state.plan || loadPlan();
+  const now = new Date();
+  const thisMonday = getMonday(now);
+  const lastMonday = new Date(thisMonday); lastMonday.setDate(lastMonday.getDate() - 7);
+  const thisMondayKey = toLocalDateKey(thisMonday);
+  const lastMondayKey = toLocalDateKey(lastMonday);
+
+  let thisWeekReps = 0, lastWeekReps = 0;
+  const thisWeekDays = new Set();
+  const thisWeekPullSets = [], thisWeekPushSets = [];
+
+  state.history.forEach(w => {
+    const dk = toLocalDateKey(w.date);
+    const d = new Date(w.date);
+    const totalReps = (w.pullTotal || 0) + (w.pushTotal || 0);
+    const sets = Array.isArray(w.sets) ? w.sets : (typeof w.sets === 'string' ? JSON.parse(w.sets) : []);
+
+    if (dk >= thisMondayKey) {
+      thisWeekReps += totalReps;
+      thisWeekDays.add(dk);
+      sets.forEach(s => { if (s.exercise === 'pullup') thisWeekPullSets.push(s.reps); else thisWeekPushSets.push(s.reps); });
+    } else if (dk >= lastMondayKey && dk < thisMondayKey) {
+      lastWeekReps += totalReps;
+    }
+  });
+
+  // Volume trend
+  let trend = 'flat', percentChange = 0;
+  if (lastWeekReps > 0) {
+    percentChange = Math.round(((thisWeekReps - lastWeekReps) / lastWeekReps) * 100);
+    if (thisWeekReps > lastWeekReps * 1.1) trend = 'up';
+    else if (thisWeekReps < lastWeekReps * 0.9) trend = 'down';
+  }
+
+  // Consistency
+  const plannedDays = plan.schedule ? plan.schedule.filter(d => d.day !== 'rest').length : 6;
+  const todayDow = (now.getDay() + 6) % 7;
+  const activeDays = thisWeekDays.size;
+  const consistencyPct = Math.round((activeDays / Math.max(plannedDays, 1)) * 100);
+
+  // Avg reps per set
+  const pullAvg = thisWeekPullSets.length > 0 ? Math.round(thisWeekPullSets.reduce((a,b) => a+b, 0) / thisWeekPullSets.length) : 0;
+  const pushAvg = thisWeekPushSets.length > 0 ? Math.round(thisWeekPushSets.reduce((a,b) => a+b, 0) / thisWeekPushSets.length) : 0;
+  const pullTarget = plan.repsPerSet ? plan.repsPerSet.pullup || 0 : 0;
+  const pushTarget = plan.repsPerSet ? plan.repsPerSet.pushup || 0 : 0;
+  const totalSets = thisWeekPullSets.length + thisWeekPushSets.length;
+  const totalSetReps = thisWeekPullSets.reduce((a,b) => a+b, 0) + thisWeekPushSets.reduce((a,b) => a+b, 0);
+  const combinedAvg = totalSets > 0 ? Math.round(totalSetReps / totalSets) : 0;
+
+  // Coaching signal
+  const tiers = state.tiers || {};
+  const pullLastTest = tiers.pullup ? tiers.pullup.lastTestDate : null;
+  const pushLastTest = tiers.pushup ? tiers.pushup.lastTestDate : null;
+  const lastTestDate = [pullLastTest, pushLastTest].filter(Boolean).sort().pop() || null;
+  const daysSinceTest = lastTestDate ? Math.floor((now - new Date(lastTestDate + 'T12:00:00')) / 86400000) : null;
+  const avgTarget = (pullTarget + pushTarget) / 2;
+
+  let signal = 'ON_TRACK';
+  if (daysSinceTest !== null && daysSinceTest <= 3) {
+    signal = 'JUST_RETESTED';
+  } else if (consistencyPct < 50 && activeDays < 3) {
+    signal = 'CONSISTENCY_ISSUE';
+  } else if ((pullAvg > 0 && pullAvg < pullTarget * 0.8) || (pushAvg > 0 && pushAvg < pushTarget * 0.8)) {
+    signal = 'FATIGUE';
+  } else if (daysSinceTest !== null && daysSinceTest >= 14 && consistencyPct >= 80 && combinedAvg >= avgTarget) {
+    signal = 'READY_TO_RETEST';
+  }
+
+  return {
+    thisWeekReps, lastWeekReps, trend, percentChange,
+    consistency: { percentage: consistencyPct, activeDays, plannedDays },
+    avgSet: { pullAvg, pushAvg, combinedAvg, pullTarget, pushTarget },
+    signal, signalData: { activeDays, plannedDays, daysSinceTest }
+  };
+}
+
+function renderAssessment() {
+  const el = document.getElementById('coachAssessment');
+  if (!el) return;
+
+  if (state.history.length < 3) {
+    el.innerHTML = '<div class="chart-card"><h3 style="font-size:var(--text-sm);font-weight:700;margin-bottom:var(--space-3)">Your Progress</h3><div class="empty-state" style="padding:var(--space-6) 0;text-align:center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:48px;height:48px;margin:0 auto var(--space-4);display:block;color:var(--color-text-faint)"><path d="M3 3v18h18"/><path d="M7 16l4-8 4 4 4-6"/></svg><p style="font-size:var(--text-sm);color:var(--color-text-muted)">Complete a few more workouts and your weekly progress assessment will appear here.</p></div></div>';
+    return;
+  }
+
+  const data = computeWeeklyAssessment();
+
+  // Metric 1: Volume
+  let volTrend = '';
+  if (data.lastWeekReps === 0) {
+    volTrend = '<span class="assessment-trend flat">First week!</span>';
+  } else {
+    const arrow = data.trend === 'up' ? '\u2191' : data.trend === 'down' ? '\u2193' : '\u2192';
+    volTrend = `<span class="assessment-trend ${data.trend}">${arrow} ${Math.abs(data.percentChange)}% vs last wk</span>`;
+  }
+
+  // Metric 3: Avg set
+  const avgVal = data.avgSet.combinedAvg > 0 ? data.avgSet.combinedAvg : '\u2014';
+  const avgTarget = Math.round((data.avgSet.pullTarget + data.avgSet.pushTarget) / 2);
+
+  // Coaching message
+  const messages = {
+    READY_TO_RETEST: `<strong>Time to retest.</strong> Your sets have been consistent for 2+ weeks and you\u2019re hitting your targets easily. Let\u2019s see if your max has gone up.<br><span class="msg-action" onclick="startMaxTest('pullup')">Take Max Test \u2192</span>`,
+    CONSISTENCY_ISSUE: `<strong>Focus on showing up.</strong> You trained ${data.signalData.activeDays} of ${data.signalData.plannedDays} planned days this week. GTG works through frequency \u2014 try anchoring sets to daily habits like after coffee or before lunch.`,
+    FATIGUE: `<strong>You might be overdoing it.</strong> Your average reps per set dropped below target this week. Take a rest day and reduce to light volume for the next 2\u20133 days.`,
+    JUST_RETESTED: `<strong>New baseline set!</strong> Your training numbers have been updated based on your max test. The next 2 weeks build from here. Focus on consistency.`,
+    PLATEAU: `<strong>Plateau detected.</strong> Your last two max tests showed similar results. Try: switching grip variants for a week, adding one weighted set per day, or taking a full deload week (half volume for 5 days).`,
+    ON_TRACK: `<strong>Looking good.</strong> You\u2019re on pace with ${data.thisWeekReps} reps this week. Keep spreading sets throughout the day and stay fresh between them.`
+  };
+
+  el.innerHTML = `<div class="chart-card">
+    <h3 style="font-size:var(--text-sm);font-weight:700;margin-bottom:var(--space-3)">Your Progress</h3>
+    <div class="assessment-metrics">
+      <div class="assessment-metric">
+        <div class="assessment-metric-value">${data.thisWeekReps}</div>
+        <div class="assessment-metric-label">Volume</div>
+        ${volTrend}
+      </div>
+      <div class="assessment-metric">
+        <div class="assessment-metric-value">${data.consistency.percentage}%</div>
+        <div class="assessment-metric-label">Consistency</div>
+        <span class="assessment-trend flat">${data.consistency.activeDays}/${data.consistency.plannedDays} days</span>
+      </div>
+      <div class="assessment-metric">
+        <div class="assessment-metric-value">${avgVal}</div>
+        <div class="assessment-metric-label">Avg Set</div>
+        <span class="assessment-trend flat">target: ${avgTarget}</span>
+      </div>
+    </div>
+    <div class="assessment-message">${messages[data.signal] || messages.ON_TRACK}</div>
+  </div>`;
+}
+
 // ─── Navigation ───
 function renderCoachTab() {
   renderDailyBriefing();
   renderTrainingPlan();
+  renderAssessment();
   renderPhilosophySection();
 }
 
