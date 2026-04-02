@@ -447,6 +447,39 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
 .signin-nudge { text-align: center; padding: var(--space-6) var(--space-4); }
 .signin-nudge p { font-size: var(--text-sm); color: var(--color-text-muted); margin-bottom: var(--space-3); }
 
+/* Achievement toast */
+.achievement-toast-container { position: fixed; bottom: 80px; left: 0; right: 0; display: flex; flex-direction: column;
+  align-items: center; z-index: 200; pointer-events: none; gap: var(--space-2); }
+.achievement-toast { pointer-events: auto; display: flex; flex-direction: column; align-items: center; gap: var(--space-1);
+  padding: var(--space-4) var(--space-6); background: oklch(from var(--color-text) l c h / 0.88); backdrop-filter: blur(12px);
+  border-radius: var(--radius-xl); box-shadow: var(--shadow-md); text-align: center; cursor: pointer;
+  transform: translateY(120%); opacity: 0; transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1), opacity 400ms ease;
+  max-width: 300px; }
+.achievement-toast.visible { transform: translateY(0); opacity: 1; }
+.achievement-toast.dismissing { transform: translateY(120%); opacity: 0; }
+.achievement-toast-emoji { font-size: 48px; line-height: 1; }
+.achievement-toast-name { font-size: var(--text-sm); font-weight: 700; color: var(--color-bg); }
+.achievement-toast-tagline { font-size: var(--text-xs); font-style: italic; color: oklch(from var(--color-bg) l c h / 0.7); }
+
+/* Trophy grid */
+.trophy-count { font-weight: 500; color: var(--color-text-muted); font-size: var(--text-xs); margin-left: var(--space-2); }
+.trophy-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }
+@media (min-width: 420px) { .trophy-grid { grid-template-columns: repeat(4, 1fr); } }
+.trophy-item { display: flex; flex-direction: column; align-items: center; text-align: center;
+  padding: var(--space-3) var(--space-1); border-radius: var(--radius-md); background: var(--color-surface-offset);
+  gap: 2px; position: relative; overflow: hidden; }
+.trophy-item.unlocked { background: var(--color-surface-offset); }
+.trophy-item.unlocked.pull-glow { box-shadow: inset 0 0 0 1px oklch(from var(--color-primary) l c h / 0.2), 0 0 12px oklch(from var(--color-primary) l c h / 0.1); }
+.trophy-item.unlocked.push-glow { box-shadow: inset 0 0 0 1px oklch(from var(--color-secondary) l c h / 0.2), 0 0 12px oklch(from var(--color-secondary) l c h / 0.1); }
+.trophy-item.unlocked.streak-glow { box-shadow: inset 0 0 0 1px oklch(from var(--color-success) l c h / 0.2), 0 0 12px oklch(from var(--color-success) l c h / 0.1); }
+.trophy-item.unlocked.special-glow { box-shadow: inset 0 0 0 1px oklch(from var(--color-orange) l c h / 0.2), 0 0 12px oklch(from var(--color-orange) l c h / 0.1); }
+.trophy-item.locked { opacity: 0.5; background: var(--color-surface-offset); }
+.trophy-emoji { font-size: 1.75rem; line-height: 1.2; }
+.trophy-name { font-size: 0.65rem; font-weight: 700; line-height: 1.2; }
+.trophy-tagline { font-size: 0.55rem; color: var(--color-text-muted); line-height: 1.2; }
+.trophy-date { font-size: 0.55rem; color: var(--color-text-faint); margin-top: 1px; }
+.trophy-condition { font-size: 0.55rem; color: var(--color-text-muted); line-height: 1.2; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
@@ -529,6 +562,8 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
   <div class="panel" id="panel-stats">
     <!-- Leaderboard section -->
     <div id="leaderboardSection"></div>
+    <!-- Trophies section -->
+    <div id="trophiesSection"></div>
     <div class="chart-card">
       <h3>Today’s Sets</h3>
       <div id="dailyBubbleTimeline"></div>
@@ -671,7 +706,13 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
+<!-- Achievement Toast Container -->
+<div class="achievement-toast-container" id="achievementToastContainer"></div>
+
 <script>
+// ─── SQL Migration (run this in Supabase SQL editor): ───
+// ALTER TABLE settings ADD COLUMN IF NOT EXISTS achievements jsonb DEFAULT '{}';
+
 // ─── Supabase Config ───
 const SUPABASE_URL = 'https://quumikcwleunjjqmendv.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_cH6TEM6K01gTaQp_SMwiKw_KBqCIBdO';
@@ -697,6 +738,344 @@ function showToast(msg, duration = 2000) {
   t.textContent = msg;
   t.classList.add('visible');
   setTimeout(() => t.classList.remove('visible'), duration);
+}
+
+// ─── Achievement Definitions ───
+const ACHIEVEMENTS = {
+  // Pull-ups
+  pull_first_rep: { id:'pull_first_rep', name:'First Rep', emoji:'🐛', animal:'Inchworm', tagline:'Even inchworms have to start somewhere', category:'pullup', condition:'1 total pull-up rep', check: s => s.totalPull >= 1 },
+  pull_first_set: { id:'pull_first_set', name:'First Set', emoji:'🐸', animal:'Tree Frog', tagline:'Grip it and rip it', category:'pullup', condition:'Complete 1 pull-up set', check: s => s.pullSets >= 1 },
+  pull_century: { id:'pull_century', name:'Century Club', emoji:'🦎', animal:'Gecko', tagline:'Sticks to walls without even trying', category:'pullup', condition:'100 total pull-up reps', check: s => s.totalPull >= 100 },
+  pull_500: { id:'pull_500', name:'High Hanger', emoji:'🐒', animal:'Spider Monkey', tagline:'Born to hang, built to swing', category:'pullup', condition:'500 total pull-up reps', check: s => s.totalPull >= 500 },
+  pull_1000: { id:'pull_1000', name:'Wingspan', emoji:'🦅', animal:'Bald Eagle', tagline:'Wingspan fully unlocked', category:'pullup', condition:'1,000 total pull-up reps', check: s => s.totalPull >= 1000 },
+  pull_15set: { id:'pull_15set', name:'Beast Set', emoji:'🦍', animal:'Silverback Gorilla', tagline:'Nobody argues with the silverback', category:'pullup', condition:'15+ reps in a single pull-up set', check: s => s.maxPullSet >= 15 },
+  pull_5x10: { id:'pull_5x10', name:'Squid Session', emoji:'🦑', animal:'Giant Squid', tagline:'Ten arms, none of them letting go', category:'pullup', condition:'10+ reps × 5+ sets in one pull-up workout', check: s => s.has5x10Pull },
+  // Push-ups
+  push_first_rep: { id:'push_first_rep', name:'First Rep', emoji:'🐌', animal:'Snail', tagline:'Slow and steady gets off the ground', category:'pushup', condition:'1 total push-up rep', check: s => s.totalPush >= 1 },
+  push_first_set: { id:'push_first_set', name:'First Set', emoji:'🦀', animal:'Crab', tagline:'Low to the ground, surprisingly strong', category:'pushup', condition:'Complete 1 push-up set', check: s => s.pushSets >= 1 },
+  push_century: { id:'push_century', name:'Century Club', emoji:'🐢', animal:'Snapping Turtle', tagline:"Don't let the shell fool you", category:'pushup', condition:'100 total push-up reps', check: s => s.totalPush >= 100 },
+  push_500: { id:'push_500', name:'Push Power', emoji:'🦬', animal:'Bison', tagline:'800 pounds of chest and shoulders', category:'pushup', condition:'500 total push-up reps', check: s => s.totalPush >= 500 },
+  push_1000: { id:'push_1000', name:'Bear Mode', emoji:'🐻', animal:'Grizzly Bear', tagline:'You are now legally a bear', category:'pushup', condition:'1,000 total push-up reps', check: s => s.totalPush >= 1000 },
+  push_30set: { id:'push_30set', name:'Rhino Rush', emoji:'🦏', animal:'Rhinoceros', tagline:'Charges through walls for fun', category:'pushup', condition:'30+ reps in a single push-up set', check: s => s.maxPushSet >= 30 },
+  push_diamond_100: { id:'push_diamond_100', name:'Diamond Claws', emoji:'💎🦂', animal:'Emperor Scorpion', tagline:'Close grip. Maximum venom.', category:'pushup', condition:'100 total diamond push-up reps', check: s => s.totalDiamond >= 100 },
+  push_archer_50: { id:'push_archer_50', name:'Eight Arms', emoji:'🐙', animal:'Octopus', tagline:'Each arm has its own brain', category:'pushup', condition:'50 total archer push-up reps', check: s => s.totalArcher >= 50 },
+  // Streaks
+  streak_3: { id:'streak_3', name:'Good Dog', emoji:'🐕', animal:'Border Collie', tagline:'Shows up whether you want it to or not', category:'streak', condition:'3 consecutive days', check: s => s.streak >= 3 },
+  streak_7: { id:'streak_7', name:'Pack Leader', emoji:'🐺', animal:'Wolf', tagline:'The pack respects consistency', category:'streak', condition:'7 consecutive days', check: s => s.streak >= 7 },
+  streak_30: { id:'streak_30', name:'Never Stops', emoji:'🦈', animal:'Great White Shark', tagline:'Has literally never stopped moving', category:'streak', condition:'30 consecutive days', check: s => s.streak >= 30 },
+  // Special
+  special_pr: { id:'special_pr', name:'Show Off', emoji:'🦚', animal:'Peacock', tagline:'You earned the right to strut', category:'special', condition:'Beat your all-time max set', check: s => s.hasPR },
+  special_comeback: { id:'special_comeback', name:'Patient Predator', emoji:'🐊', animal:'Crocodile', tagline:'Waited. Watched. Dominated.', category:'special', condition:'Beat a PR after 30+ day gap', check: s => s.hasComeback },
+  special_dual: { id:'special_dual', name:'Dual Threat', emoji:'🦎', animal:'Chameleon', tagline:'Adapts to any situation', category:'special', condition:'Pull-ups AND push-ups same day', check: s => s.hasDualToday },
+  special_full_send: { id:'special_full_send', name:'Full Send', emoji:'🐋', animal:'Blue Whale', tagline:'Biggest animal alive, biggest effort today', category:'special', condition:'100+ total reps in one day', check: s => s.todayTotal >= 100 },
+  special_365: { id:'special_365', name:'Mythical', emoji:'🦄', animal:'Unicorn', tagline:'Some said you were a myth', category:'special', condition:'365 unique workout days', check: s => s.uniqueDays >= 365 },
+  special_10k: { id:'special_10k', name:'Legend', emoji:'🦆', animal:'Golden Rubber Duck', tagline:"10,000 reps and this is your reward. You're welcome.", category:'special', condition:'10,000 lifetime total reps', check: s => (s.totalPull + s.totalPush) >= 10000 },
+};
+
+// ─── Achievement State ───
+function loadAchievementState() {
+  try {
+    const s = localStorage.getItem('repcounter_achievements');
+    return s ? JSON.parse(s) : {};
+  } catch(e) { return {}; }
+}
+function saveAchievementState(achState) {
+  try { localStorage.setItem('repcounter_achievements', JSON.stringify(achState)); } catch(e) {}
+}
+
+// ─── Achievement Stats Computation ───
+function computeAchievementStats() {
+  const history = state.history;
+  let totalPull = 0, totalPush = 0, totalDiamond = 0, totalArcher = 0;
+  let pullSets = 0, pushSets = 0;
+  let maxPullSet = 0, maxPushSet = 0;
+  const workoutDays = new Set();
+  const todayKey = toLocalDateKey(new Date());
+  let todayPull = 0, todayPush = 0;
+  // For PR detection: track all-time max set from PREVIOUS workouts vs current
+  let allTimeMaxPull = 0, allTimeMaxPush = 0;
+  let currentMaxPull = 0, currentMaxPush = 0;
+  // For 5x10 pull-up check: per-day tracking
+  let has5x10Pull = false;
+  // For comeback detection
+  const sortedDays = [];
+
+  // Group workouts by day for various checks
+  const dayWorkouts = {};
+
+  history.forEach((w, idx) => {
+    const dayKey = toLocalDateKey(w.date);
+    workoutDays.add(dayKey);
+    if (!dayWorkouts[dayKey]) dayWorkouts[dayKey] = [];
+    dayWorkouts[dayKey].push(w);
+    const sets = Array.isArray(w.sets) ? w.sets : (typeof w.sets === 'string' ? JSON.parse(w.sets) : []);
+
+    totalPull += w.pullTotal || 0;
+    totalPush += w.pushTotal || 0;
+
+    if (dayKey === todayKey) {
+      todayPull += w.pullTotal || 0;
+      todayPush += w.pushTotal || 0;
+    }
+
+    sets.forEach(s => {
+      if (s.exercise === 'pullup') {
+        pullSets++;
+        if (s.reps > maxPullSet) maxPullSet = s.reps;
+      }
+      if (s.exercise === 'pushup') {
+        pushSets++;
+        if (s.reps > maxPushSet) maxPushSet = s.reps;
+        if (s.variant === 'diamond') totalDiamond += s.reps;
+        if (s.variant === 'archer') totalArcher += s.reps;
+      }
+    });
+  });
+
+  // Check 5x10 pull per day
+  Object.values(dayWorkouts).forEach(dayW => {
+    let daySets10Plus = 0;
+    dayW.forEach(w => {
+      const sets = Array.isArray(w.sets) ? w.sets : (typeof w.sets === 'string' ? JSON.parse(w.sets) : []);
+      sets.forEach(s => {
+        if (s.exercise === 'pullup' && s.reps >= 10) daySets10Plus++;
+      });
+    });
+    if (daySets10Plus >= 5) has5x10Pull = true;
+  });
+
+  // Streak calculation: consecutive days ending at today (or yesterday)
+  const allDays = Array.from(workoutDays).sort();
+  let streak = 0;
+  if (allDays.length > 0) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const checkDate = new Date(today);
+    if (!workoutDays.has(toLocalDateKey(checkDate))) {
+      checkDate.setDate(checkDate.getDate() - 1);
+      if (!workoutDays.has(toLocalDateKey(checkDate))) {
+        streak = 0;
+      } else {
+        while (workoutDays.has(toLocalDateKey(checkDate))) {
+          streak++;
+          checkDate.setDate(checkDate.getDate() - 1);
+        }
+      }
+    } else {
+      while (workoutDays.has(toLocalDateKey(checkDate))) {
+        streak++;
+        checkDate.setDate(checkDate.getDate() - 1);
+      }
+    }
+  }
+
+  // PR detection: compare current workout's max set to all-time max from previous workouts
+  // "current" = most recent workout (history[0] since history is sorted desc)
+  let hasPR = false;
+  if (history.length >= 2) {
+    const currentW = history[0];
+    const currentSets = Array.isArray(currentW.sets) ? currentW.sets : (typeof currentW.sets === 'string' ? JSON.parse(currentW.sets) : []);
+    let currMaxPull = 0, currMaxPush = 0;
+    currentSets.forEach(s => {
+      if (s.exercise === 'pullup' && s.reps > currMaxPull) currMaxPull = s.reps;
+      if (s.exercise === 'pushup' && s.reps > currMaxPush) currMaxPush = s.reps;
+    });
+    // All-time max from previous workouts (excluding the most recent)
+    let prevMaxPull = 0, prevMaxPush = 0;
+    for (let i = 1; i < history.length; i++) {
+      const sets = Array.isArray(history[i].sets) ? history[i].sets : (typeof history[i].sets === 'string' ? JSON.parse(history[i].sets) : []);
+      sets.forEach(s => {
+        if (s.exercise === 'pullup' && s.reps > prevMaxPull) prevMaxPull = s.reps;
+        if (s.exercise === 'pushup' && s.reps > prevMaxPush) prevMaxPush = s.reps;
+      });
+    }
+    if ((currMaxPull > prevMaxPull && currMaxPull > 0) || (currMaxPush > prevMaxPush && currMaxPush > 0)) {
+      hasPR = true;
+    }
+  }
+
+  // Comeback detection: beat a PR after 30+ day gap
+  let hasComeback = false;
+  if (hasPR && allDays.length >= 2) {
+    // Check if there was a 30+ day gap before the most recent workout day
+    const recentDay = allDays[allDays.length - 1];
+    let prevDay = null;
+    for (let i = allDays.length - 2; i >= 0; i--) {
+      const d = allDays[i];
+      if (d !== recentDay) { prevDay = d; break; }
+    }
+    if (prevDay) {
+      const dayDiff = (new Date(recentDay + 'T12:00:00') - new Date(prevDay + 'T12:00:00')) / (1000 * 60 * 60 * 24);
+      if (dayDiff >= 30) hasComeback = true;
+    }
+  }
+
+  // Dual threat: pull-ups AND push-ups today
+  const hasDualToday = todayPull > 0 && todayPush > 0;
+
+  return {
+    totalPull, totalPush, totalDiamond, totalArcher,
+    pullSets, pushSets,
+    maxPullSet, maxPushSet,
+    streak,
+    has5x10Pull,
+    hasPR, hasComeback,
+    hasDualToday,
+    todayTotal: todayPull + todayPush,
+    uniqueDays: workoutDays.size
+  };
+}
+
+// ─── Achievement Toast Queue ───
+let achievementToastQueue = [];
+let achievementToastShowing = false;
+
+function showAchievementToast(achievement) {
+  achievementToastQueue.push(achievement);
+  if (!achievementToastShowing) processAchievementToastQueue();
+}
+
+function processAchievementToastQueue() {
+  if (achievementToastQueue.length === 0) { achievementToastShowing = false; return; }
+  achievementToastShowing = true;
+  const ach = achievementToastQueue.shift();
+  const container = document.getElementById('achievementToastContainer');
+  const el = document.createElement('div');
+  el.className = 'achievement-toast';
+  el.innerHTML = `<div class="achievement-toast-name">${ach.name}</div><div class="achievement-toast-emoji">${ach.emoji}</div><div class="achievement-toast-tagline">${ach.tagline}</div>`;
+  container.appendChild(el);
+
+  // Trigger slide-up
+  requestAnimationFrame(() => { requestAnimationFrame(() => { el.classList.add('visible'); }); });
+
+  function dismiss() {
+    el.classList.remove('visible');
+    el.classList.add('dismissing');
+    setTimeout(() => {
+      el.remove();
+      setTimeout(() => processAchievementToastQueue(), 300);
+    }, 400);
+  }
+
+  el.addEventListener('click', dismiss);
+  setTimeout(dismiss, 4000);
+}
+
+// ─── Achievement Checking Engine ───
+function checkAchievements(showToasts = true) {
+  const stats = computeAchievementStats();
+  const achState = loadAchievementState();
+  const newlyUnlocked = [];
+
+  Object.values(ACHIEVEMENTS).forEach(ach => {
+    if (achState[ach.id] && achState[ach.id].unlocked) return; // already unlocked
+    if (ach.check(stats)) {
+      achState[ach.id] = { unlocked: true, date: toLocalDateKey(new Date()) };
+      newlyUnlocked.push(ach);
+    } else {
+      if (!achState[ach.id]) achState[ach.id] = { unlocked: false };
+    }
+  });
+
+  saveAchievementState(achState);
+  syncAchievementsToCloud(achState);
+
+  if (showToasts) {
+    newlyUnlocked.forEach(ach => showAchievementToast(ach));
+  }
+
+  return newlyUnlocked.map(a => a.id);
+}
+
+// ─── Achievement Cloud Sync ───
+async function syncAchievementsToCloud(achState) {
+  try {
+    const row = {
+      device_id: DEVICE_ID, rest_seconds: state.restSeconds,
+      target_pullups: state.targetPullups, target_pushups: state.targetPushups,
+      achievements: achState
+    };
+    if (currentUser) row.user_id = currentUser.id;
+    await sb.from('settings').upsert(row);
+  } catch(e) { console.warn('[sync] Failed to sync achievements:', e.message); }
+}
+
+async function loadAchievementsFromCloud() {
+  try {
+    const { column, value } = getCloudIdentifier();
+    const { data } = await sb.from('settings').select('achievements').eq(column, value).single();
+    if (data && data.achievements && typeof data.achievements === 'object') {
+      const local = loadAchievementState();
+      // Merge: cloud wins for unlocked, keep most data
+      const merged = { ...local };
+      Object.keys(data.achievements).forEach(k => {
+        if (data.achievements[k].unlocked) {
+          merged[k] = data.achievements[k];
+        }
+      });
+      // Also keep any locally unlocked ones
+      Object.keys(local).forEach(k => {
+        if (local[k].unlocked) merged[k] = local[k];
+      });
+      saveAchievementState(merged);
+    }
+  } catch(e) { /* ignore */ }
+}
+
+// ─── Trophy Rendering ───
+function renderTrophies() {
+  const section = document.getElementById('trophiesSection');
+  const achState = loadAchievementState();
+  const allAchs = Object.values(ACHIEVEMENTS);
+  const totalCount = allAchs.length;
+  const unlockedCount = allAchs.filter(a => achState[a.id] && achState[a.id].unlocked).length;
+
+  // Split into unlocked and locked
+  const unlocked = allAchs.filter(a => achState[a.id] && achState[a.id].unlocked)
+    .sort((a, b) => {
+      // Most recent first
+      const da = achState[a.id].date || '1970-01-01';
+      const db = achState[b.id].date || '1970-01-01';
+      return db.localeCompare(da);
+    });
+  const locked = allAchs.filter(a => !achState[a.id] || !achState[a.id].unlocked);
+  const sorted = [...unlocked, ...locked];
+
+  function glowClass(ach) {
+    if (ach.category === 'pullup') return 'pull-glow';
+    if (ach.category === 'pushup') return 'push-glow';
+    if (ach.category === 'streak') return 'streak-glow';
+    return 'special-glow';
+  }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr + 'T12:00:00');
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+
+  let gridHtml = sorted.map(ach => {
+    const isUnlocked = achState[ach.id] && achState[ach.id].unlocked;
+    if (isUnlocked) {
+      return `<div class="trophy-item unlocked ${glowClass(ach)}">
+        <div class="trophy-emoji">${ach.emoji}</div>
+        <div class="trophy-name">${ach.name}</div>
+        <div class="trophy-tagline">${ach.tagline}</div>
+        <div class="trophy-date">${formatDate(achState[ach.id].date)}</div>
+      </div>`;
+    } else {
+      return `<div class="trophy-item locked">
+        <div class="trophy-emoji">❓</div>
+        <div class="trophy-name">???</div>
+        <div class="trophy-condition">${ach.condition}</div>
+      </div>`;
+    }
+  }).join('');
+
+  section.innerHTML = `<div class="chart-card">
+    <h3>Trophies <span class="trophy-count">${unlockedCount} / ${totalCount}</span></h3>
+    <div class="trophy-grid">${gridHtml}</div>
+  </div>`;
 }
 
 // ─── Auth Functions ───
@@ -847,6 +1226,7 @@ document.getElementById('skipSignIn').addEventListener('click', () => {
   syncFromCloud();
   renderHouseholdSection();
   renderAccountSection();
+  checkAchievements(false); // retroactive check, no toasts
 });
 
 // ─── Persistence (Supabase cloud + localStorage cache) ───
@@ -884,7 +1264,10 @@ async function syncFromCloud() {
     saveStateLocal();
     renderHistory();
     renderCalendar();
-    if (document.getElementById('panel-stats').classList.contains('active')) { updateCharts(); renderLeaderboard(); }
+    if (document.getElementById('panel-stats').classList.contains('active')) { updateCharts(); renderLeaderboard(); renderTrophies(); }
+    // Load achievements from cloud and retroactively check
+    await loadAchievementsFromCloud();
+    checkAchievements(false); // retroactive — no toasts
     console.log('[sync] Loaded from Supabase:', state.history.length, 'workouts');
   } catch(e) {
     console.warn('[sync] Cloud unavailable, using local cache:', e.message);
@@ -955,7 +1338,7 @@ document.querySelectorAll('.nav-item').forEach(item => {
     item.classList.add('active');
     document.getElementById('panel-' + item.dataset.nav).classList.add('active');
     if (item.dataset.nav === 'history') { renderCalendar(); renderHistory(); }
-    if (item.dataset.nav === 'stats') { updateCharts(); renderLeaderboard(); }
+    if (item.dataset.nav === 'stats') { updateCharts(); renderLeaderboard(); renderTrophies(); }
     if (item.dataset.nav === 'settings') { renderHouseholdSection(); renderAccountSection(); }
   });
 });
@@ -1163,6 +1546,7 @@ function saveWorkout() {
   repDisplay.textContent = '0'; setInfo.textContent = 'Set 1';
   renderCurrentSets(); saveState();
   saveWorkoutToCloud(workout);
+  checkAchievements(true);
 }
 
 // ─── Rest Timer ───
