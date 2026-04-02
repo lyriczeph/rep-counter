@@ -1760,9 +1760,11 @@ async function syncFromCloud() {
         sets: typeof r.sets === 'string' ? JSON.parse(r.sets) : r.sets,
         pullTotal: r.pull_total, pushTotal: r.push_total
       })).filter(w => {
-        // Exclude empty workouts (0 sets, 0 reps)
-        const sets = Array.isArray(w.sets) ? w.sets : [];
-        return sets.length > 0 || w.pullTotal > 0 || w.pushTotal > 0;
+        // Exclude truly empty workouts (no sets AND no reps at all)
+        const sets = Array.isArray(w.sets) ? w.sets : (w.sets ? Object.values(w.sets) : []);
+        const hasSets = sets.length > 0;
+        const hasReps = (w.pullTotal || 0) > 0 || (w.pushTotal || 0) > 0;
+        return hasSets || hasReps;
       });
     }
     if (sRes.data) {
@@ -2106,15 +2108,21 @@ function getTomorrowSchedule() {
 }
 
 // ─── Today's Progress ───
+function parseSets(raw) {
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === 'string') try { const p = JSON.parse(raw); return Array.isArray(p) ? p : []; } catch(e) { return []; }
+  if (raw && typeof raw === 'object') return Object.values(raw);
+  return [];
+}
+
 function getTodayProgress() {
   const todayKey = toLocalDateKey(new Date());
   let pullSets = 0, pushSets = 0, pullReps = 0, pushReps = 0;
   // From saved workouts
   state.history.filter(w => toLocalDateKey(w.date) === todayKey).forEach(w => {
-    const sets = Array.isArray(w.sets) ? w.sets : (typeof w.sets === 'string' ? JSON.parse(w.sets) : []);
-    sets.forEach(s => {
-      if (s.exercise === 'pullup') { pullSets++; pullReps += s.reps; }
-      else { pushSets++; pushReps += s.reps; }
+    parseSets(w.sets).forEach(s => {
+      if (s.exercise === 'pullup') { pullSets++; pullReps += (s.reps || 0); }
+      else if (s.exercise === 'pushup') { pushSets++; pushReps += (s.reps || 0); }
     });
   });
   // From current unsaved session
@@ -2166,10 +2174,11 @@ function renderDailyBriefing() {
   const todayW = state.history.filter(w => toLocalDateKey(w.date) === todayKey);
   let dPull = 0, dPush = 0, dLines = '';
   todayW.forEach((w, i) => {
-    const s = Array.isArray(w.sets) ? w.sets : [];
+    const s = parseSets(w.sets);
+    const rawType = Array.isArray(w.sets) ? 'arr' : typeof w.sets;
     const t = new Date(w.date).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
-    s.forEach(x => { if(x.exercise==='pullup') dPull++; else dPush++; });
-    dLines += `${t}: ${s.length}s pT=${w.pullTotal||0} uT=${w.pushTotal||0} `;
+    s.forEach(x => { if(x.exercise==='pullup') dPull++; else if(x.exercise==='pushup') dPush++; });
+    dLines += `${t}[${rawType}]: ${s.length}s pT=${w.pullTotal||0} uT=${w.pushTotal||0} `;
     s.forEach(x => dLines += `[${x.exercise?.substring(0,4)}/${x.variant?.substring(0,4)}:${x.reps}]`);
     dLines += '<br>';
   });
@@ -2268,10 +2277,9 @@ function getWeekDates() {
 function getDayProgress(dateKey) {
   let pullSets = 0, pushSets = 0, pullReps = [], pushReps = [];
   state.history.filter(w => toLocalDateKey(w.date) === dateKey).forEach(w => {
-    const sets = Array.isArray(w.sets) ? w.sets : (typeof w.sets === 'string' ? JSON.parse(w.sets) : []);
-    sets.forEach(s => {
-      if (s.exercise === 'pullup') { pullSets++; pullReps.push(s.reps); }
-      else { pushSets++; pushReps.push(s.reps); }
+    parseSets(w.sets).forEach(s => {
+      if (s.exercise === 'pullup') { pullSets++; pullReps.push(s.reps || 0); }
+      else if (s.exercise === 'pushup') { pushSets++; pushReps.push(s.reps || 0); }
     });
   });
   // Include current unsaved session for today
