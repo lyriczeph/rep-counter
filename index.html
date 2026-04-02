@@ -1759,13 +1759,7 @@ async function syncFromCloud() {
         id: r.id, date: r.date,
         sets: typeof r.sets === 'string' ? JSON.parse(r.sets) : r.sets,
         pullTotal: r.pull_total, pushTotal: r.push_total
-      })).filter(w => {
-        // Exclude truly empty workouts (no sets AND no reps at all)
-        const sets = Array.isArray(w.sets) ? w.sets : (w.sets ? Object.values(w.sets) : []);
-        const hasSets = sets.length > 0;
-        const hasReps = (w.pullTotal || 0) > 0 || (w.pushTotal || 0) > 0;
-        return hasSets || hasReps;
-      });
+      }));
     }
     if (sRes.data) {
       state.restSeconds = sRes.data.rest_seconds || 5;
@@ -2118,12 +2112,17 @@ function parseSets(raw) {
 function getTodayProgress() {
   const todayKey = toLocalDateKey(new Date());
   let pullSets = 0, pushSets = 0, pullReps = 0, pushReps = 0;
-  // From saved workouts
+  // From saved workouts — count from sets array AND use pullTotal/pushTotal for reps
   state.history.filter(w => toLocalDateKey(w.date) === todayKey).forEach(w => {
-    parseSets(w.sets).forEach(s => {
-      if (s.exercise === 'pullup') { pullSets++; pullReps += (s.reps || 0); }
-      else if (s.exercise === 'pushup') { pushSets++; pushReps += (s.reps || 0); }
-    });
+    const sets = parseSets(w.sets);
+    const wPullSets = sets.filter(s => s.exercise === 'pullup').length;
+    const wPushSets = sets.filter(s => s.exercise === 'pushup').length;
+    // Use set count from array, but if sets array is empty but totals exist, count as 1 set
+    pullSets += wPullSets || ((w.pullTotal || 0) > 0 ? 1 : 0);
+    pushSets += wPushSets || ((w.pushTotal || 0) > 0 ? 1 : 0);
+    // Use totals for reps (more reliable than summing sets which may be objects)
+    pullReps += (w.pullTotal || 0);
+    pushReps += (w.pushTotal || 0);
   });
   // From current unsaved session
   (state.sets || []).forEach(s => {
