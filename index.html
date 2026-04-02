@@ -828,7 +828,7 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
       <button class="type-btn" data-type="weighted">Weighted</button>
     </div>
     <div class="exercise-hero" id="exerciseHero" title="Tap for form guide">
-      <img id="exerciseHeroImg" src="img/exercise-pullup-standard.webp" alt="Exercise illustration">
+      <img id="exerciseHeroImg" src="img/exercise-pullup-standard-m.webp" alt="Exercise illustration">
       <span class="info-hint">i</span>
     </div>
     <div class="weight-input" id="weightInput">
@@ -901,6 +901,16 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
 
   <!-- SETTINGS -->
   <div class="panel" id="panel-settings">
+    <div class="section-label">Display</div>
+    <div class="setting-row">
+      <span class="setting-label">Exercise figure</span>
+      <div class="setting-control">
+        <div class="tier-segmented" id="figureToggle" style="width: 130px;">
+          <button class="tier-seg-btn active" data-figure="male">Male</button>
+          <button class="tier-seg-btn" data-figure="female">Female</button>
+        </div>
+      </div>
+    </div>
     <div class="section-label">Timer</div>
     <div class="setting-row">
       <span class="setting-label">Rest timer (seconds)</span>
@@ -2375,194 +2385,201 @@ document.getElementById('weightDown').addEventListener('click', () => {
 // ─── Exercise Data Catalog ───
 const EXERCISE_DATA = {
   pullup_standard: {
-    name: 'Standard Pull-Up', img: 'img/exercise-pullup-standard.webp', difficulty: 'Intermediate',
+    name: 'Standard Pull-Up', img: { male: 'img/exercise-pullup-standard-m.webp', female: 'img/exercise-pullup-standard-f.webp' }, difficulty: 'Intermediate',
     target: 'Lats', secondary: ['Biceps', 'Rear Delts', 'Rhomboids', 'Core'],
     steps: ['Grip the bar slightly wider than shoulder width, palms facing away.','Hang with arms fully extended, shoulders engaged (not shrugging).','Pull your chest toward the bar by driving elbows down and back.','Chin clears the bar at the top — squeeze your lats.','Lower under control to full arm extension. That\'s one rep.'],
     tips: ['Avoid kipping or swinging — strict form builds more strength.','Initiate the pull by depressing your shoulder blades, not bending your arms.','Breathe out on the way up, in on the way down.']
   },
   pullup_eccentric: {
-    name: 'Eccentric (Negative) Pull-Up', img: 'img/exercise-pullup-eccentric.webp', difficulty: 'Beginner',
+    name: 'Eccentric (Negative) Pull-Up', img: { male: 'img/exercise-pullup-eccentric-m.webp', female: 'img/exercise-pullup-eccentric-f.webp' }, difficulty: 'Beginner',
     target: 'Lats', secondary: ['Biceps', 'Rear Delts', 'Forearms', 'Core'],
     steps: ['Jump or use a step to get your chin above the bar.','Hold the top position for 1–2 seconds.','Lower yourself as slowly as possible (aim for 5–10 seconds).','Fully extend your arms at the bottom.','Step back up and repeat.'],
     tips: ['The slower the descent, the more strength you build.','Great for building toward your first full pull-up.','Focus on controlling the movement through the entire range.']
   },
   pullup_weighted: {
-    name: 'Weighted Pull-Up', img: 'img/exercise-pullup-weighted.webp', difficulty: 'Advanced',
+    name: 'Weighted Pull-Up', img: { male: 'img/exercise-pullup-weighted-m.webp', female: 'img/exercise-pullup-weighted-f.webp' }, difficulty: 'Advanced',
     target: 'Lats', secondary: ['Biceps', 'Rear Delts', 'Rhomboids', 'Core', 'Grip'],
     steps: ['Add weight via a dip belt, weight vest, or loaded backpack.','Grip the bar slightly wider than shoulder width.','Hang with arms fully extended, brace your core.','Pull your chest toward the bar — same form as a standard pull-up.','Lower under control. Avoid dropping or swinging.'],
     tips: ['Start with 10% of bodyweight and progress by 5 lbs every 2–3 weeks.','Keep reps in the 3–5 range for strength.','Pair with bodyweight sets for volume after your heavy sets.']
   },
   pushup_standard: {
-    name: 'Standard Push-Up', img: 'img/exercise-pushup-standard.webp', difficulty: 'Beginner',
+    name: 'Standard Push-Up', img: { male: 'img/exercise-pushup-standard-m.webp', female: 'img/exercise-pushup-standard-f.webp' }, difficulty: 'Beginner',
     target: 'Chest', secondary: ['Triceps', 'Front Delts', 'Core', 'Serratus Anterior'],
     steps: ['Place hands slightly wider than shoulder width, fingers spread.','Extend your body into a straight plank — feet hip-width apart.','Lower your chest to just above the floor, elbows at ~45°.','Push back up to full arm extension.','Keep core tight throughout — no sagging hips.'],
     tips: ['Elbows should point back, not flare out to the sides.','Full range of motion: chest nearly touches the floor each rep.','Engage your glutes to keep your body in a straight line.']
   },
   pushup_diamond: {
-    name: 'Diamond Push-Up', img: 'img/exercise-pushup-diamond.webp', difficulty: 'Intermediate',
+    name: 'Diamond Push-Up', img: { male: 'img/exercise-pushup-diamond-m.webp', female: 'img/exercise-pushup-diamond-f.webp' }, difficulty: 'Intermediate',
     target: 'Triceps', secondary: ['Inner Chest', 'Front Delts', 'Core'],
     steps: ['Place hands together beneath your chest, forming a diamond shape with thumbs and index fingers.','Extend into a plank position, body straight.','Lower your chest toward your hands, elbows close to your body.','Push back up, squeezing your triceps at the top.','Keep elbows tracking along your ribs, not flaring out.'],
     tips: ['Harder than standard push-ups — reduce reps if needed.','If wrists hurt, widen the diamond slightly.','Activates triceps ~50% more than standard push-ups.']
   },
   pushup_archer: {
-    name: 'Archer Push-Up', img: 'img/exercise-pushup-archer.webp', difficulty: 'Advanced',
+    name: 'Archer Push-Up', img: { male: 'img/exercise-pushup-archer-m.webp', female: 'img/exercise-pushup-archer-f.webp' }, difficulty: 'Advanced',
     target: 'Chest', secondary: ['Triceps', 'Front Delts', 'Core', 'Obliques'],
     steps: ['Start in a wide push-up position, fingers pointing outward.','Shift your weight to one arm and lower toward that side.','The other arm extends straight out for support, not pushing.','Push back up from the loaded arm.','Alternate sides each rep, or do all reps on one side then switch.'],
     tips: ['This is a precursor to one-arm push-ups.','Keep your body as straight as possible — resist rotation.','Lower the difficulty by bending the extended arm slightly.']
   },
   // ─── Pull-Up Tier Variants ───
   pullup_dead_hang: {
-    name: 'Dead Hang', img: 'img/exercise-pullup-standard.webp', difficulty: 'Beginner', timed: true,
+    name: 'Dead Hang', img: { male: 'img/exercise-pullup-deadhang-m.webp', female: 'img/exercise-pullup-deadhang-f.webp' }, difficulty: 'Beginner', timed: true,
     target: 'Grip / Forearms', secondary: ['Lats', 'Shoulders', 'Core'],
     steps: ['Grip the bar with palms facing away, shoulder-width apart.','Step off the platform and hang with arms fully extended.','Keep shoulders engaged — pull them slightly down and back.','Hold as long as you can while breathing steadily.','Step down when you can no longer hold.'],
     tips: ['Aim for 20–30 seconds to start, building to 60+ seconds.','Great for building the grip strength needed for pull-ups.','Relax your body — tension wastes energy.']
   },
   pullup_band_assisted: {
-    name: 'Band-Assisted Pull-Up', img: 'img/exercise-pullup-standard.webp', difficulty: 'Beginner',
+    name: 'Band-Assisted Pull-Up', img: { male: 'img/exercise-pullup-bandassisted-m.webp', female: 'img/exercise-pullup-bandassisted-f.webp' }, difficulty: 'Beginner',
     target: 'Lats', secondary: ['Biceps', 'Rear Delts', 'Core'],
     steps: ['Loop a resistance band over the bar.','Step or kneel into the band for assistance.','Grip the bar shoulder-width apart, palms away.','Pull your chin above the bar using the band\'s help.','Lower under control to full extension.'],
     tips: ['Use thicker bands for more help, thinner bands as you progress.','Focus on the same strict form as a full pull-up.','Graduate to thinner bands before attempting unassisted reps.']
   },
   pullup_inverted_row: {
-    name: 'Inverted Row', img: 'img/exercise-pullup-standard.webp', difficulty: 'Beginner',
+    name: 'Inverted Row', img: { male: 'img/exercise-pullup-invertedrow-m.webp', female: 'img/exercise-pullup-invertedrow-f.webp' }, difficulty: 'Beginner',
     target: 'Lats', secondary: ['Biceps', 'Rear Delts', 'Rhomboids', 'Core'],
     steps: ['Set a bar at waist height (Smith machine or low bar).','Hang underneath with arms extended, body straight.','Pull your chest to the bar by driving elbows back.','Squeeze shoulder blades together at the top.','Lower under control back to the start.'],
     tips: ['The more horizontal your body, the harder it gets.','Keep your body rigid like a plank throughout.','Great stepping stone toward full pull-ups.']
   },
   pullup_chinup: {
-    name: 'Chin-Up', img: 'img/exercise-pullup-standard.webp', difficulty: 'Intermediate',
+    name: 'Chin-Up', img: { male: 'img/exercise-pullup-chinup-m.webp', female: 'img/exercise-pullup-chinup-f.webp' }, difficulty: 'Intermediate',
     target: 'Biceps', secondary: ['Lats', 'Rear Delts', 'Core'],
     steps: ['Grip the bar with palms facing toward you, shoulder-width apart.','Hang with arms fully extended.','Pull until your chin clears the bar — focus on squeezing biceps.','Lower under control to full arm extension.','Avoid swinging or kipping.'],
     tips: ['Chin-ups emphasize biceps more than standard pull-ups.','Slightly easier than pull-ups for most people.','Keep elbows pointed forward, not flaring out.']
   },
   pullup_neutral: {
-    name: 'Neutral Grip Pull-Up', img: 'img/exercise-pullup-standard.webp', difficulty: 'Intermediate',
+    name: 'Neutral Grip Pull-Up', img: { male: 'img/exercise-pullup-neutral-m.webp', female: 'img/exercise-pullup-neutral-f.webp' }, difficulty: 'Intermediate',
     target: 'Lats', secondary: ['Biceps', 'Brachialis', 'Rear Delts', 'Core'],
     steps: ['Grip parallel handles with palms facing each other.','Hang with arms fully extended.','Pull up until chin clears the handles.','Lower under control.','Maintain a slight lean back throughout.'],
     tips: ['Easiest on the wrists and shoulders of all grip variations.','Great for high-volume training.','Targets the brachialis for arm thickness.']
   },
   pullup_close_grip: {
-    name: 'Close Grip Pull-Up', img: 'img/exercise-pullup-standard.webp', difficulty: 'Advanced',
+    name: 'Close Grip Pull-Up', img: { male: 'img/exercise-pullup-closegrip-m.webp', female: 'img/exercise-pullup-closegrip-f.webp' }, difficulty: 'Advanced',
     target: 'Lats', secondary: ['Biceps', 'Lower Lats', 'Core'],
     steps: ['Grip the bar with hands 6–8 inches apart.','Hang with arms fully extended.','Pull up, focusing on driving elbows to your sides.','Chin clears the bar at the top.','Lower under control.'],
     tips: ['Emphasizes the lower lats and biceps.','Keep elbows close to your body throughout.','Harder than shoulder-width grip for most people.']
   },
   pullup_wide: {
-    name: 'Wide Grip Pull-Up', img: 'img/exercise-pullup-standard.webp', difficulty: 'Advanced',
+    name: 'Wide Grip Pull-Up', img: { male: 'img/exercise-pullup-wide-m.webp', female: 'img/exercise-pullup-wide-f.webp' }, difficulty: 'Advanced',
     target: 'Lats', secondary: ['Teres Major', 'Rear Delts', 'Core'],
     steps: ['Grip the bar 1.5× shoulder width, palms facing away.','Hang with arms fully extended.','Pull up by driving elbows down and wide.','Chin clears the bar — focus on lat contraction.','Lower under control to full extension.'],
     tips: ['Builds the wide V-taper look.','Shorter range of motion but greater lat isolation.','If shoulders hurt, narrow your grip slightly.']
   },
   pullup_slow_tempo: {
-    name: 'Slow Tempo Pull-Up', img: 'img/exercise-pullup-standard.webp', difficulty: 'Advanced',
+    name: 'Slow Tempo Pull-Up', img: { male: 'img/exercise-pullup-slowtempo-m.webp', female: 'img/exercise-pullup-slowtempo-f.webp' }, difficulty: 'Advanced',
     target: 'Lats', secondary: ['Biceps', 'Rear Delts', 'Core', 'Grip'],
     steps: ['Grip the bar shoulder-width apart.','Pull up slowly over 3–4 seconds.','Pause at the top for 1 second.','Lower over 3–4 seconds.','Pause at the bottom for 1 second before the next rep.'],
     tips: ['Eliminates momentum — pure strength.','Expect to do 40–50% fewer reps than normal.','Excellent for breaking through plateaus.']
   },
   pullup_archer: {
-    name: 'Archer Pull-Up', img: 'img/exercise-pullup-weighted.webp', difficulty: 'Hardcore',
+    name: 'Archer Pull-Up', img: { male: 'img/exercise-pullup-archer-m.webp', female: 'img/exercise-pullup-archer-f.webp' }, difficulty: 'Hardcore',
     target: 'Lats', secondary: ['Biceps', 'Rear Delts', 'Core', 'Grip'],
     steps: ['Grip the bar wide with both hands.','Pull up toward one hand while extending the other arm along the bar.','The working arm does most of the pulling.','Lower under control.','Alternate sides each rep.'],
     tips: ['A progression toward one-arm pull-ups.','The extended arm assists minimally — try to rely on the working arm.','Keep your core tight to prevent rotation.']
   },
   pullup_lsit: {
-    name: 'L-Sit Pull-Up', img: 'img/exercise-pullup-weighted.webp', difficulty: 'Hardcore',
+    name: 'L-Sit Pull-Up', img: { male: 'img/exercise-pullup-lsit-m.webp', female: 'img/exercise-pullup-lsit-f.webp' }, difficulty: 'Hardcore',
     target: 'Lats', secondary: ['Core', 'Hip Flexors', 'Biceps', 'Grip'],
     steps: ['Grip the bar shoulder-width apart.','Raise legs to 90° (L-sit position) and hold them there.','Pull up while maintaining the L-sit.','Chin clears the bar.','Lower under control, legs still elevated.'],
     tips: ['Massively increases core demand.','Start with knees bent if straight legs are too hard.','Don\'t let your legs swing — stay controlled.']
   },
   pullup_typewriter: {
-    name: 'Typewriter Pull-Up', img: 'img/exercise-pullup-weighted.webp', difficulty: 'Hardcore',
+    name: 'Typewriter Pull-Up', img: { male: 'img/exercise-pullup-typewriter-m.webp', female: 'img/exercise-pullup-typewriter-f.webp' }, difficulty: 'Hardcore',
     target: 'Lats', secondary: ['Biceps', 'Rear Delts', 'Core'],
     steps: ['Pull up to the top of a wide-grip pull-up.','At the top, shift your body horizontally to one hand.','Slide across to the other hand while staying at the top.','That\'s one rep. Lower and repeat, or continue sliding.','Keep chin above bar throughout the lateral movement.'],
     tips: ['Extremely advanced — master wide-grip pull-ups first.','Builds insane lateral pulling strength.','Start with short side-to-side movements and increase range.']
   },
   pullup_towel: {
-    name: 'Towel Pull-Up', img: 'img/exercise-pullup-weighted.webp', difficulty: 'Hardcore',
+    name: 'Towel Pull-Up', img: { male: 'img/exercise-pullup-towel-m.webp', female: 'img/exercise-pullup-towel-f.webp' }, difficulty: 'Hardcore',
     target: 'Grip', secondary: ['Lats', 'Biceps', 'Forearms', 'Core'],
     steps: ['Drape two towels over the bar, shoulder-width apart.','Grip one towel in each hand.','Hang with arms fully extended.','Pull up by squeezing the towels and driving elbows down.','Lower under control.'],
     tips: ['The ultimate grip strength builder.','Expect significantly fewer reps than bar pull-ups.','Use thick towels for maximum grip challenge.']
   },
   // ─── Push-Up Tier Variants ───
   pushup_wall: {
-    name: 'Wall Push-Up', img: 'img/exercise-pushup-standard.webp', difficulty: 'Beginner',
+    name: 'Wall Push-Up', img: { male: 'img/exercise-pushup-wall-m.webp', female: 'img/exercise-pushup-wall-f.webp' }, difficulty: 'Beginner',
     target: 'Chest', secondary: ['Triceps', 'Front Delts'],
     steps: ['Stand arm\'s length from a wall.','Place hands on the wall at shoulder height, shoulder-width apart.','Lean in, bending elbows to bring your chest toward the wall.','Push back to the starting position.','Keep your body straight throughout.'],
     tips: ['Perfect for absolute beginners.','The farther your feet from the wall, the harder it gets.','Focus on slow, controlled movement.']
   },
   pushup_incline: {
-    name: 'Incline Push-Up', img: 'img/exercise-pushup-standard.webp', difficulty: 'Beginner',
+    name: 'Incline Push-Up', img: { male: 'img/exercise-pushup-incline-m.webp', female: 'img/exercise-pushup-incline-f.webp' }, difficulty: 'Beginner',
     target: 'Chest', secondary: ['Triceps', 'Front Delts', 'Core'],
     steps: ['Place hands on a bench, step, or sturdy elevated surface.','Extend body into a straight line from head to heels.','Lower chest toward the surface, elbows at ~45°.','Push back up to full extension.','Keep core tight — no sagging.'],
     tips: ['Lower the surface height to increase difficulty.','Great bridge between wall push-ups and floor push-ups.','Aim for a surface at knee to hip height to start.']
   },
   pushup_knee: {
-    name: 'Knee Push-Up', img: 'img/exercise-pushup-standard.webp', difficulty: 'Beginner',
+    name: 'Knee Push-Up', img: { male: 'img/exercise-pushup-knee-m.webp', female: 'img/exercise-pushup-knee-f.webp' }, difficulty: 'Beginner',
     target: 'Chest', secondary: ['Triceps', 'Front Delts', 'Core'],
     steps: ['Start in a plank position, then lower your knees to the floor.','Hands shoulder-width apart, body straight from knees to head.','Lower your chest toward the floor.','Push back up to full arm extension.','Keep hips in line — don\'t pike up.'],
     tips: ['Not "girl push-ups" — a legit progression tool.','Cross your ankles behind you for stability.','Progress to full push-ups when you can do 15+ reps.']
   },
   pushup_eccentric_timed: {
-    name: 'Eccentric Push-Up (Timed)', img: 'img/exercise-pushup-standard.webp', difficulty: 'Beginner', timed: true,
+    name: 'Eccentric Push-Up (Timed)', img: { male: 'img/exercise-pushup-eccentrictimed-m.webp', female: 'img/exercise-pushup-eccentrictimed-f.webp' }, difficulty: 'Beginner', timed: true,
     target: 'Chest', secondary: ['Triceps', 'Front Delts', 'Core'],
     steps: ['Start in a full push-up position.','Lower yourself as slowly as possible toward the floor.','Aim for 5–10 seconds on the way down.','Once on the floor, reset to the top position.','Repeat for the timed duration.'],
     tips: ['Builds the strength needed for full push-ups.','Focus on maximum time under tension.','Use knee push-up position to reset at the top if needed.']
   },
   pushup_wide: {
-    name: 'Wide Push-Up', img: 'img/exercise-pushup-standard.webp', difficulty: 'Intermediate',
+    name: 'Wide Push-Up', img: { male: 'img/exercise-pushup-wide-m.webp', female: 'img/exercise-pushup-wide-f.webp' }, difficulty: 'Intermediate',
     target: 'Chest', secondary: ['Front Delts', 'Triceps', 'Core'],
     steps: ['Place hands about 1.5× shoulder width apart.','Extend body into a plank position.','Lower chest toward the floor with elbows flaring wider.','Push back up to full extension.','Maintain a straight body line throughout.'],
     tips: ['Emphasizes the outer chest and front delts.','Slightly easier than standard push-ups for most.','Don\'t go too wide — hands should stay under your elbows at the bottom.']
   },
   pushup_decline: {
-    name: 'Decline Push-Up', img: 'img/exercise-pushup-standard.webp', difficulty: 'Intermediate',
+    name: 'Decline Push-Up', img: { male: 'img/exercise-pushup-decline-m.webp', female: 'img/exercise-pushup-decline-f.webp' }, difficulty: 'Intermediate',
     target: 'Upper Chest', secondary: ['Triceps', 'Front Delts', 'Core'],
     steps: ['Place feet on an elevated surface (bench, step, chair).','Hands on the floor, shoulder-width apart.','Lower your chest toward the floor.','Push back up to full extension.','Keep your body straight — don\'t let hips sag.'],
     tips: ['The higher your feet, the harder and more shoulder-dominant it gets.','Targets the upper chest more than flat push-ups.','Start with a low step and progress higher.']
   },
   pushup_tempo: {
-    name: 'Tempo Push-Up', img: 'img/exercise-pushup-standard.webp', difficulty: 'Intermediate',
+    name: 'Tempo Push-Up', img: { male: 'img/exercise-pushup-tempo-m.webp', female: 'img/exercise-pushup-tempo-f.webp' }, difficulty: 'Intermediate',
     target: 'Chest', secondary: ['Triceps', 'Front Delts', 'Core'],
     steps: ['Standard push-up position.','Lower over 3–4 seconds.','Pause at the bottom for 1 second.','Push up over 1–2 seconds.','Pause at the top for 1 second.'],
     tips: ['Eliminates momentum for better muscle engagement.','Expect fewer reps than normal — that\'s the point.','Excellent for building control and strength.']
   },
   pushup_weighted: {
-    name: 'Weighted Push-Up', img: 'img/exercise-pushup-standard.webp', difficulty: 'Advanced',
+    name: 'Weighted Push-Up', img: { male: 'img/exercise-pushup-weighted-m.webp', female: 'img/exercise-pushup-weighted-f.webp' }, difficulty: 'Advanced',
     target: 'Chest', secondary: ['Triceps', 'Front Delts', 'Core'],
     steps: ['Place a weight plate or wear a weighted vest.','Assume standard push-up position.','Lower chest toward the floor with the added load.','Push back up to full extension.','Maintain perfect form — the weight amplifies any flaws.'],
     tips: ['Start with 10% of bodyweight and progress slowly.','A weight vest is more stable than a plate on your back.','Keep reps in the 5–10 range for strength building.']
   },
   pushup_pike: {
-    name: 'Pike Push-Up', img: 'img/exercise-pushup-standard.webp', difficulty: 'Advanced',
+    name: 'Pike Push-Up', img: { male: 'img/exercise-pushup-pike-m.webp', female: 'img/exercise-pushup-pike-f.webp' }, difficulty: 'Advanced',
     target: 'Shoulders', secondary: ['Triceps', 'Upper Chest', 'Core'],
     steps: ['Start in a downward-dog position — hips high, body in an inverted V.','Hands shoulder-width apart, head between arms.','Bend elbows and lower head toward the floor.','Push back up to the inverted V position.','Keep legs as straight as possible.'],
     tips: ['Progression toward handstand push-ups.','The closer your feet to your hands, the harder it gets.','Elevate feet on a box for more shoulder emphasis.']
   },
   pushup_deficit: {
-    name: 'Deficit Push-Up', img: 'img/exercise-pushup-standard.webp', difficulty: 'Advanced',
+    name: 'Deficit Push-Up', img: { male: 'img/exercise-pushup-deficit-m.webp', female: 'img/exercise-pushup-deficit-f.webp' }, difficulty: 'Advanced',
     target: 'Chest', secondary: ['Triceps', 'Front Delts', 'Core'],
     steps: ['Place hands on two small platforms (push-up handles, books, plates).','Assume standard push-up position.','Lower your chest BELOW hand level for extra range of motion.','Push back up to full extension.','Keep elbows at ~45° throughout.'],
     tips: ['Extra range of motion means extra muscle activation.','3–4 inches of deficit is plenty.','Excellent for breaking through push-up plateaus.']
   },
   pushup_onearm: {
-    name: 'One-Arm Push-Up', img: 'img/exercise-pushup-archer.webp', difficulty: 'Hardcore',
+    name: 'One-Arm Push-Up', img: { male: 'img/exercise-pushup-onearm-m.webp', female: 'img/exercise-pushup-onearm-f.webp' }, difficulty: 'Hardcore',
     target: 'Chest', secondary: ['Triceps', 'Front Delts', 'Core', 'Obliques'],
     steps: ['Widen your stance for stability.','Place one hand on the floor under your chest, other behind your back.','Lower your chest toward the floor — fight rotation.','Push back up to full extension.','Complete all reps on one side, then switch.'],
     tips: ['One of the hardest bodyweight exercises.','Master archer push-ups first.','Wider stance makes it easier — narrow your stance over time.']
   },
   pushup_planche: {
-    name: 'Planche Lean (Timed)', img: 'img/exercise-pushup-archer.webp', difficulty: 'Hardcore', timed: true,
+    name: 'Planche Lean (Timed)', img: { male: 'img/exercise-pushup-planche-m.webp', female: 'img/exercise-pushup-planche-f.webp' }, difficulty: 'Hardcore', timed: true,
     target: 'Front Delts', secondary: ['Chest', 'Biceps', 'Core', 'Wrists'],
     steps: ['Start in a push-up position.','Lean forward, shifting weight over your hands.','Hands should be by your waist, not shoulders.','Hold the forward lean as long as you can.','Keep arms locked and body straight.'],
     tips: ['This is a precursor to the full planche — start with a slight lean.','Wrist flexibility is crucial — warm up first.','The farther you lean, the harder it gets.']
   },
   pushup_handstand: {
-    name: 'Handstand Push-Up', img: 'img/exercise-pushup-archer.webp', difficulty: 'Hardcore',
+    name: 'Handstand Push-Up', img: { male: 'img/exercise-pushup-handstand-m.webp', female: 'img/exercise-pushup-handstand-f.webp' }, difficulty: 'Hardcore',
     target: 'Shoulders', secondary: ['Triceps', 'Upper Chest', 'Core', 'Traps'],
     steps: ['Kick up into a handstand against a wall.','Hands shoulder-width apart, body tight.','Lower your head toward the floor by bending elbows.','Push back up to full lockout.','Maintain balance and control throughout.'],
     tips: ['Master pike push-ups with elevated feet first.','Use a wall for balance while building strength.','Keep your core extremely tight to prevent arching.']
   }
 };
+
+function getExerciseImg(data) {
+  const pref = localStorage.getItem('repcounter-figure') || 'male';
+  if (!data || !data.img) return 'img/exercise-pullup-standard-m.webp';
+  if (typeof data.img === 'string') return data.img;
+  return data.img[pref] || data.img.male;
+}
 
 function getExerciseKey() { return state.exercise + '_' + state.variant; }
 
@@ -2570,7 +2587,7 @@ function updateExerciseHero() {
   const key = getExerciseKey();
   const data = EXERCISE_DATA[key];
   if (data) {
-    document.getElementById('exerciseHeroImg').src = data.img;
+    document.getElementById('exerciseHeroImg').src = getExerciseImg(data);
   }
 }
 
@@ -2581,7 +2598,7 @@ function showExerciseInfo() {
   const overlay = document.getElementById('exerciseInfoOverlay');
   document.getElementById('exerciseInfoTitle').textContent = data.name;
   const isPush = state.exercise === 'pushup';
-  let html = `<div class="exercise-info-img"><img src="${data.img}" alt="${data.name}"></div>`;
+  let html = `<div class="exercise-info-img"><img src="${getExerciseImg(data)}" alt="${data.name}"></div>`;
   html += `<div class="exercise-info-muscles">`;
   html += `<span class="muscle-tag primary${isPush ? ' push' : ''}">${data.target}</span>`;
   data.secondary.forEach(m => { html += `<span class="muscle-tag secondary">${m}</span>`; });
@@ -3413,8 +3430,8 @@ function sendNudgeNotification() {
     navigator.serviceWorker.ready.then(reg => {
       reg.showNotification('Grease the Groove', {
         body: body,
-        icon: 'img/exercise-pullup-standard.webp',
-        badge: 'img/exercise-pullup-standard.webp',
+        icon: 'img/exercise-pullup-standard-m.webp',
+        badge: 'img/exercise-pullup-standard-m.webp',
         tag: 'nudge',
         renotify: true,
       });
@@ -4420,6 +4437,22 @@ document.querySelectorAll('.nav-item').forEach(item => {
     if (item.dataset.nav === 'workout') { checkRetestNudge(); showGtgTip(); }
   });
 });
+
+// Figure preference
+(function initFigureToggle() {
+  const pref = localStorage.getItem('repcounter-figure') || 'male';
+  const toggle = document.getElementById('figureToggle');
+  if (!toggle) return;
+  toggle.querySelectorAll('.tier-seg-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.figure === pref);
+    btn.addEventListener('click', () => {
+      toggle.querySelectorAll('.tier-seg-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      localStorage.setItem('repcounter-figure', btn.dataset.figure);
+      updateExerciseHero();
+    });
+  });
+})();
 
 </script>
 </body>
