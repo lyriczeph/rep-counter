@@ -2168,23 +2168,11 @@ function renderDailyBriefing() {
     body = `<div class="briefing-plan">${prog.pullSets} pull-up sets · ${prog.pushSets} push-up sets · ${totalReps} total reps</div>Rest up. Tomorrow is a <strong>${tomorrow.day}</strong> day.`;
   }
 
-  // Debug v3
-  const todayKey = toLocalDateKey(new Date());
-  const todayW = state.history.filter(w => toLocalDateKey(w.date) === todayKey);
-  let dPull = 0, dPush = 0, dLines = '';
-  todayW.forEach((w, i) => {
-    const s = parseSets(w.sets);
-    const rawType = Array.isArray(w.sets) ? 'arr' : typeof w.sets;
-    const t = new Date(w.date).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
-    s.forEach(x => { if(x.exercise==='pullup') dPull++; else if(x.exercise==='pushup') dPush++; });
-    dLines += `${t}[${rawType}]: ${s.length}s pT=${w.pullTotal||0} uT=${w.pushTotal||0} `;
-    s.forEach(x => dLines += `[${x.exercise?.substring(0,4)}/${x.variant?.substring(0,4)}:${x.reps}]`);
-    dLines += '<br>';
-  });
-  const dbg = `<div style="font-size:0.5rem;color:var(--color-text-faint);margin-top:8px;font-family:monospace;line-height:1.3">
-    key=${todayKey} hist=${state.history.length} todayW=${todayW.length}<br>
-    counted: pull=${dPull} push=${dPush} | fn: pull=${prog.pullSets} push=${prog.pushSets}<br>
-    ${dLines}</div>`;
+  // Debug: show what prog variable actually contains
+  const dbg = `<div style="font-size:0.5rem;color:var(--color-text-faint);margin-top:8px;font-family:monospace">
+    prog used: pull=${prog.pullSets}/${targetPull} push=${prog.pushSets}/${targetPush} | reps=${prog.pullReps}+${prog.pushReps}=${totalReps}<br>
+    sched: ${sched.day} pullT=${targetPull} pushT=${targetPush} | hist=${state.history.length}
+  </div>`;
   el.innerHTML = `<div class="briefing-card"><div class="briefing-heading">${heading}</div><div class="briefing-body">${body}${btn}</div>${dbg}</div>`;
 }
 
