@@ -443,6 +443,31 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
 .coach-tier-tip { text-align: center; padding: var(--space-3) var(--space-4);
   font-size: var(--text-xs); font-style: italic; color: var(--color-text-faint); line-height: 1.5; }
 
+/* Training plan week */
+.plan-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--space-1); margin-bottom: var(--space-4); }
+.plan-day { text-align: center; padding: var(--space-2) var(--space-1); border-radius: var(--radius-md); background: var(--color-surface); }
+.plan-day.today { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+.plan-day.completed { background: var(--color-primary-highlight); }
+.plan-day.rest-day { opacity: 0.5; }
+.plan-day-label { font-size: 0.6rem; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase; margin-bottom: var(--space-1); }
+.plan-day-volume { font-size: 0.55rem; color: var(--color-text-faint); text-transform: uppercase; letter-spacing: 0.03em; }
+.plan-day-sets { font-size: var(--text-sm); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* Training plan today detail */
+.plan-today-detail { background: var(--color-surface); border-radius: var(--radius-lg); padding: var(--space-4); box-shadow: var(--shadow-sm); }
+.plan-today-header { font-size: var(--text-sm); font-weight: 700; margin-bottom: var(--space-3); }
+.plan-today-row { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-2); }
+.plan-today-row:last-child { margin-bottom: 0; }
+.plan-today-ex { font-size: var(--text-xs); font-weight: 600; width: 72px; flex-shrink: 0; }
+.plan-today-ex.pull { color: var(--color-primary); }
+.plan-today-ex.push { color: var(--color-secondary); }
+.plan-dots { display: flex; gap: var(--space-1); flex: 1; flex-wrap: wrap; }
+.plan-dot { width: 24px; height: 24px; border-radius: var(--radius-full); background: var(--color-surface-offset);
+  display: grid; place-items: center; font-size: 0.6rem; font-weight: 700; color: var(--color-text-faint); font-variant-numeric: tabular-nums; }
+.plan-dot.done { background: var(--color-primary-highlight); color: var(--color-primary); }
+.plan-dot.done.push { background: var(--color-secondary-highlight); color: var(--color-secondary); }
+.plan-today-summary { font-size: var(--text-xs); font-weight: 600; flex-shrink: 0; width: 48px; text-align: right; }
+
 /* History overlay */
 .history-overlay { position: fixed; inset: 0; background: oklch(from var(--color-bg) l c h / 0.96);
   backdrop-filter: blur(8px); z-index: 100; display: none; flex-direction: column;
@@ -1935,9 +1960,138 @@ function renderPhilosophySection() {
   });
 }
 
+// ─── Training Plan ───
+function getWeekDates() {
+  // Returns array of 7 Date objects for Mon–Sun of the current week
+  const now = new Date();
+  const dow = (now.getDay() + 6) % 7; // Mon=0
+  const dates = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - dow + i);
+    dates.push(d);
+  }
+  return dates;
+}
+
+function getDayProgress(dateKey) {
+  let pullSets = 0, pushSets = 0, pullReps = [], pushReps = [];
+  state.history.filter(w => toLocalDateKey(w.date) === dateKey).forEach(w => {
+    const sets = Array.isArray(w.sets) ? w.sets : (typeof w.sets === 'string' ? JSON.parse(w.sets) : []);
+    sets.forEach(s => {
+      if (s.exercise === 'pullup') { pullSets++; pullReps.push(s.reps); }
+      else { pushSets++; pushReps.push(s.reps); }
+    });
+  });
+  return { pullSets, pushSets, pullReps, pushReps };
+}
+
+function renderTrainingPlan() {
+  const el = document.getElementById('coachPlan');
+  if (!el) return;
+  const plan = state.plan || loadPlan();
+  const weekDates = getWeekDates();
+  const todayKey = toLocalDateKey(new Date());
+  const todayDow = (new Date().getDay() + 6) % 7;
+  const dayLabels = ['M','T','W','T','F','S','S'];
+  const volLabels = { rest: 'Rest', light: 'Light', medium: 'Med', heavy: 'Heavy' };
+
+  // Weekly row
+  let weekHtml = '<div class="plan-week">';
+  weekDates.forEach((date, i) => {
+    const sched = plan.schedule[i];
+    const dateKey = toLocalDateKey(date);
+    const isToday = i === todayDow;
+    const isRest = sched.day === 'rest';
+    const dayProg = getDayProgress(dateKey);
+    const hasWorkout = dayProg.pullSets > 0 || dayProg.pushSets > 0;
+    const totalSets = sched.pullSets + sched.pushSets;
+    const isDone = !isRest && hasWorkout && dayProg.pullSets >= sched.pullSets && dayProg.pushSets >= sched.pushSets;
+    const isPast = i < todayDow;
+
+    let cls = 'plan-day';
+    if (isToday) cls += ' today';
+    if (isRest) cls += ' rest-day';
+    if (isDone || (isPast && hasWorkout)) cls += ' completed';
+
+    weekHtml += `<div class="${cls}">`;
+    weekHtml += `<div class="plan-day-label">${dayLabels[i]}</div>`;
+    if (isRest) {
+      weekHtml += `<div class="plan-day-sets">—</div>`;
+      weekHtml += `<div class="plan-day-volume">Rest</div>`;
+    } else {
+      weekHtml += `<div class="plan-day-sets">${totalSets}</div>`;
+      weekHtml += `<div class="plan-day-volume">${volLabels[sched.day]}</div>`;
+    }
+    weekHtml += '</div>';
+  });
+  weekHtml += '</div>';
+
+  // Today's detail
+  const todaySched = plan.schedule[todayDow];
+  let detailHtml = '';
+  if (todaySched.day === 'rest') {
+    detailHtml = '<div class="plan-today-detail"><div class="plan-today-header">🧘 Rest Day</div><div style="font-size:var(--text-sm);color:var(--color-text-muted)">No sets planned. Recover and come back tomorrow.</div></div>';
+  } else {
+    const prog = getTodayProgress();
+    // Also get individual set reps from today's history
+    const todayPullReps = [], todayPushReps = [];
+    state.history.filter(w => toLocalDateKey(w.date) === todayKey).forEach(w => {
+      const sets = Array.isArray(w.sets) ? w.sets : (typeof w.sets === 'string' ? JSON.parse(w.sets) : []);
+      sets.forEach(s => {
+        if (s.exercise === 'pullup') todayPullReps.push(s.reps);
+        else todayPushReps.push(s.reps);
+      });
+    });
+    // Include current unsaved sets
+    (state.sets || []).forEach(s => {
+      if (s.exercise === 'pullup') todayPullReps.push(s.reps);
+      else todayPushReps.push(s.reps);
+    });
+
+    const pullTarget = todaySched.pullSets;
+    const pushTarget = todaySched.pushSets;
+    const pullRPS = plan.repsPerSet.pullup || 1;
+    const pushRPS = plan.repsPerSet.pushup || 1;
+
+    function renderDots(doneReps, target, rps, type) {
+      let dots = '';
+      for (let i = 0; i < target; i++) {
+        if (i < doneReps.length) {
+          dots += `<div class="plan-dot done ${type}">${doneReps[i]}</div>`;
+        } else {
+          dots += `<div class="plan-dot">${rps}</div>`;
+        }
+      }
+      // Extra sets beyond target
+      for (let i = target; i < doneReps.length; i++) {
+        dots += `<div class="plan-dot done ${type}">${doneReps[i]}</div>`;
+      }
+      return dots;
+    }
+
+    detailHtml = `<div class="plan-today-detail">
+      <div class="plan-today-header">Today — ${volLabels[todaySched.day]} Day</div>
+      <div class="plan-today-row">
+        <div class="plan-today-ex pull">Pull-ups</div>
+        <div class="plan-dots">${renderDots(todayPullReps, pullTarget, pullRPS, 'pull')}</div>
+        <div class="plan-today-summary">${todayPullReps.length}/${pullTarget}</div>
+      </div>
+      <div class="plan-today-row">
+        <div class="plan-today-ex push">Push-ups</div>
+        <div class="plan-dots">${renderDots(todayPushReps, pushTarget, pushRPS, 'push')}</div>
+        <div class="plan-today-summary">${todayPushReps.length}/${pushTarget}</div>
+      </div>
+    </div>`;
+  }
+
+  el.innerHTML = `<h3 style="font-size:var(--text-sm);font-weight:700;margin-bottom:var(--space-3)">This Week's Plan</h3>${weekHtml}${detailHtml}`;
+}
+
 // ─── Navigation ───
 function renderCoachTab() {
   renderDailyBriefing();
+  renderTrainingPlan();
   renderPhilosophySection();
 }
 
