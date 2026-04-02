@@ -466,6 +466,30 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
 
 
 
+/* Swipeable set items */
+.set-item-wrap { position: relative; overflow: hidden; border-radius: var(--radius-sm); margin-bottom: var(--space-1); }
+.set-item-wrap .set-item { position: relative; z-index: 1; background: var(--color-surface); transition: transform 200ms ease;
+  touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.set-item-wrap .set-actions { position: absolute; right: 0; top: 0; bottom: 0; display: flex; z-index: 0; }
+.set-action-btn { padding: 0 var(--space-4); display: grid; place-items: center; font-size: var(--text-xs);
+  font-weight: 600; color: #fff; min-width: 56px; min-height: 44px; }
+.set-action-btn.edit { background: var(--color-primary); }
+.set-action-btn.delete { background: var(--color-error); }
+
+/* Set edit overlay */
+.set-edit-overlay { position: fixed; inset: 0; background: oklch(from var(--color-bg) l c h / 0.92);
+  display: none; place-items: center; z-index: 150; backdrop-filter: blur(8px); padding: var(--space-4); }
+.set-edit-overlay.visible { display: grid; }
+.set-edit-card { background: var(--color-surface); border-radius: var(--radius-xl); padding: var(--space-6);
+  width: 100%; max-width: 320px; box-shadow: var(--shadow-md); text-align: center; }
+.set-edit-card h3 { font-size: var(--text-base); font-weight: 700; margin-bottom: var(--space-4); }
+.set-edit-input { width: 80px; font-size: var(--text-xl); font-weight: 700; text-align: center;
+  padding: var(--space-2); border: 2px solid var(--color-primary); border-radius: var(--radius-md);
+  background: var(--color-bg); color: var(--color-text); font-variant-numeric: tabular-nums; }
+.set-edit-btns { display: flex; gap: var(--space-2); justify-content: center; margin-top: var(--space-4); }
+.set-edit-btns button { padding: var(--space-2) var(--space-5); border-radius: var(--radius-full);
+  font-size: var(--text-sm); font-weight: 600; min-height: 44px; }
+
 /* Coach entrance animation */
 @keyframes coachFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 .coach-fade-in { animation: coachFadeIn 400ms ease both; }
@@ -1005,6 +1029,19 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
 </nav>
 
 
+
+<!-- Set edit overlay -->
+<div class="set-edit-overlay" id="setEditOverlay">
+  <div class="set-edit-card">
+    <h3 id="setEditTitle">Edit Set</h3>
+    <div style="margin-bottom:var(--space-3);font-size:var(--text-sm);color:var(--color-text-muted)" id="setEditInfo"></div>
+    <input type="number" class="set-edit-input" id="setEditReps" min="1" max="100">
+    <div class="set-edit-btns">
+      <button style="background:var(--color-surface-offset);color:var(--color-text)" onclick="closeSetEdit()">Cancel</button>
+      <button style="background:var(--color-primary);color:var(--color-text-inverse)" onclick="saveSetEdit()">Save</button>
+    </div>
+  </div>
+</div>
 
 <!-- History overlay -->
 <div class="history-overlay" id="historyOverlay">
@@ -3059,12 +3096,95 @@ function renderCurrentSets() {
   c.innerHTML = `
     <div class="session-card">${statsHtml}</div>
     <ul class="set-list">${state.sets.map((s, i) =>
-      `<li class="set-item"><span class="set-num"><span class="ex-dot ${s.exercise}"></span> Set ${i+1} <span class="set-type">${variantLabelShort(s.variant)}${weightLabel(s)}</span></span><span class="set-reps">${s.reps}</span></li>`
+      `<li class="set-item-wrap" data-set-idx="${i}"><div class="set-actions"><button class="set-action-btn edit" onclick="openSetEdit(${i})">Edit</button><button class="set-action-btn delete" onclick="deleteCurrentSet(${i})">Delete</button></div><div class="set-item"><span class="set-num"><span class="ex-dot ${s.exercise}"></span> Set ${i+1} <span class="set-type">${variantLabelShort(s.variant)}${weightLabel(s)}</span></span><span class="set-reps">${s.reps}</span></div></li>`
     ).reverse().join('')}</ul>
     <div style="padding:var(--space-3) 0;text-align:center">
       <button class="action-btn primary pullup" onclick="saveWorkout()">Save Workout</button>
     </div>`;
 }
+
+// ─── Set Edit/Delete ───
+let editingSetIdx = -1;
+
+function openSetEdit(idx) {
+  if (idx < 0 || idx >= state.sets.length) return;
+  editingSetIdx = idx;
+  const s = state.sets[idx];
+  const exName = s.exercise === 'pullup' ? 'Pull-Up' : 'Push-Up';
+  document.getElementById('setEditTitle').textContent = `Edit Set ${idx + 1}`;
+  document.getElementById('setEditInfo').textContent = `${exName} · ${variantLabelShort(s.variant)}${s.weight ? ' @ ' + s.weight + 'lb' : ''}`;
+  document.getElementById('setEditReps').value = s.reps;
+  document.getElementById('setEditOverlay').classList.add('visible');
+  setTimeout(() => document.getElementById('setEditReps').select(), 100);
+}
+
+function closeSetEdit() {
+  editingSetIdx = -1;
+  document.getElementById('setEditOverlay').classList.remove('visible');
+}
+
+function saveSetEdit() {
+  if (editingSetIdx < 0 || editingSetIdx >= state.sets.length) { closeSetEdit(); return; }
+  const newReps = parseInt(document.getElementById('setEditReps').value);
+  if (isNaN(newReps) || newReps < 1) { closeSetEdit(); return; }
+  state.sets[editingSetIdx].reps = newReps;
+  renderCurrentSets();
+  updateNextSetCard();
+  closeSetEdit();
+}
+
+function deleteCurrentSet(idx) {
+  if (idx < 0 || idx >= state.sets.length) return;
+  state.sets.splice(idx, 1);
+  state.setNumber = state.sets.length + 1;
+  document.getElementById('setInfo').textContent = 'Set ' + state.setNumber;
+  renderCurrentSets();
+  updateNextSetCard();
+}
+
+// Swipe handling for set items
+function initSetSwipe() {
+  document.querySelectorAll('.set-item-wrap').forEach(wrap => {
+    const item = wrap.querySelector('.set-item');
+    if (!item) return;
+    let startX = 0, currentX = 0, swiping = false;
+
+    item.addEventListener('touchstart', (e) => {
+      startX = e.touches[0].clientX;
+      currentX = 0;
+      swiping = true;
+      item.style.transition = 'none';
+    }, { passive: true });
+
+    item.addEventListener('touchmove', (e) => {
+      if (!swiping) return;
+      currentX = e.touches[0].clientX - startX;
+      if (currentX > 0) currentX = 0; // only swipe left
+      item.style.transform = `translateX(${Math.max(currentX, -112)}px)`;
+    }, { passive: true });
+
+    item.addEventListener('touchend', () => {
+      swiping = false;
+      item.style.transition = 'transform 200ms ease';
+      if (currentX < -40) {
+        item.style.transform = 'translateX(-112px)'; // reveal actions
+      } else {
+        item.style.transform = 'translateX(0)';
+      }
+    });
+  });
+}
+
+// Re-init swipe after render
+const _origRenderCurrentSets = renderCurrentSets;
+renderCurrentSets = function() {
+  _origRenderCurrentSets();
+  initSetSwipe();
+};
+
+document.getElementById('setEditOverlay').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeSetEdit();
+});
 
 function saveWorkout() {
   if (state.sets.length === 0) return;
@@ -4184,7 +4304,7 @@ const TIER_MAX_FOR_LEVEL = {
 const TIER_VARIANTS = {
   pullup: {
     beginner: ['dead_hang', 'band_assisted', 'eccentric', 'inverted_row'],
-    intermediate: ['standard', 'chinup', 'neutral', 'eccentric', 'band_assisted'],
+    intermediate: ['standard', 'chinup', 'eccentric', 'band_assisted'],
     advanced: ['standard', 'chinup', 'weighted', 'close_grip', 'wide', 'slow_tempo'],
     hardcore: ['weighted', 'archer', 'lsit', 'typewriter', 'towel']
   },
@@ -5073,7 +5193,7 @@ function getRecommendedVariant(exercise) {
     } else if (tier === 'intermediate') {
       // standard Mon/Wed/Fri, chinup Tue, neutral Thu
       if (dayOfWeek === 2) return 'chinup';
-      if (dayOfWeek === 4) return 'neutral';
+      if (dayOfWeek === 4) return 'chinup';
       return 'standard';
     } else if (tier === 'advanced') {
       // standard Mon/Fri, weighted Tue/Thu, close_grip Wed
