@@ -5164,11 +5164,13 @@ function checkRepAdjustment() {
       }
     }
 
-    // Struggle detection: avg < target - 1 for 3 consecutive active days
-    const last3Avgs = dailyAvgs.slice(0, 3);
-    const allBelow = last3Avgs.every(avg => avg < targetRPS - 1);
+    // Struggle detection: avg < target * 0.6 for 5 consecutive active days
+    // (much stricter — only triggers for persistent, significant underperformance)
+    if (dailyAvgs.length >= 5) {
+    const last5Avgs = dailyAvgs.slice(0, 5);
+    const allBelow = last5Avgs.every(avg => avg < targetRPS * 0.6);
     if (allBelow) {
-      const newRPS = Math.floor(overallAvg);
+      const newRPS = Math.max(1, Math.floor(overallAvg));
       if (newRPS > 0 && newRPS < targetRPS) {
         showToast('Sets feeling tough? Dropping to ' + newRPS + ' reps is fine.', 4000);
         plan.repsPerSet[exercise] = newRPS;
@@ -5177,6 +5179,7 @@ function checkRepAdjustment() {
         try { localStorage.setItem('repcounter_rep_nudge', JSON.stringify(nudgeState)); } catch(e) {}
       }
     }
+    } // end struggle detection dailyAvgs >= 5 check
   });
 }
 
