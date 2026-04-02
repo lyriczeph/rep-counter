@@ -498,6 +498,138 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
 .trophy-date { font-size: 0.55rem; color: var(--color-text-faint); margin-top: 1px; }
 .trophy-condition { font-size: 0.55rem; color: var(--color-text-muted); line-height: 1.2; }
 
+/* Tier variant scrollable selector */
+.type-selector { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.type-selector::-webkit-scrollbar { display: none; }
+.type-btn { flex: 0 0 auto; white-space: nowrap; }
+
+/* Onboarding Assessment */
+.onboarding-overlay { position: fixed; inset: 0; background: var(--color-bg); display: none; z-index: 200;
+  flex-direction: column; align-items: center; justify-content: center; padding: var(--space-6); }
+.onboarding-overlay.visible { display: flex; }
+.onboarding-card { width: 100%; max-width: 400px; text-align: center; }
+.onboarding-card h2 { font-size: var(--text-xl); font-weight: 700; margin-bottom: var(--space-2); }
+.onboarding-card .ob-subtitle { font-size: var(--text-sm); color: var(--color-text-muted); margin-bottom: var(--space-8); }
+.onboarding-card .ob-step { display: none; }
+.onboarding-card .ob-step.active { display: block; }
+.ob-question { font-size: var(--text-base); font-weight: 600; margin-bottom: var(--space-4); }
+.ob-options { display: flex; flex-direction: column; gap: var(--space-2); }
+.ob-option { padding: var(--space-3) var(--space-4); border-radius: var(--radius-lg); background: var(--color-surface);
+  border: 2px solid var(--color-border); font-size: var(--text-sm); font-weight: 500; text-align: left;
+  min-height: 48px; transition: all var(--transition-interactive); }
+.ob-option:hover { border-color: var(--color-primary); background: var(--color-primary-highlight); }
+.ob-option.selected { border-color: var(--color-primary); background: var(--color-primary-highlight); color: var(--color-primary); }
+.ob-next { margin-top: var(--space-6); padding: var(--space-3) var(--space-8); border-radius: var(--radius-full);
+  background: var(--color-primary); color: var(--color-text-inverse); font-size: var(--text-sm); font-weight: 600;
+  min-height: 48px; opacity: 0.4; pointer-events: none; transition: all var(--transition-interactive); }
+.ob-next.enabled { opacity: 1; pointer-events: auto; }
+.ob-next.enabled:hover { background: var(--color-primary-hover); }
+.ob-progress { display: flex; gap: var(--space-2); justify-content: center; margin-bottom: var(--space-6); }
+.ob-dot { width: 8px; height: 8px; border-radius: var(--radius-full); background: var(--color-border); }
+.ob-dot.active { background: var(--color-primary); }
+
+/* Tier Progress Card */
+.tier-card { background: var(--color-surface); border-radius: var(--radius-lg); padding: var(--space-4);
+  margin-bottom: var(--space-4); box-shadow: var(--shadow-sm); }
+.tier-card h3 { font-size: var(--text-sm); font-weight: 700; margin-bottom: var(--space-3);
+  display: flex; align-items: center; gap: var(--space-2); }
+.tier-row { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-3); }
+.tier-row:last-child { margin-bottom: 0; }
+.tier-ex-label { font-size: var(--text-xs); font-weight: 600; width: 64px; flex-shrink: 0; }
+.tier-badge { display: inline-flex; align-items: center; gap: var(--space-1); padding: 2px var(--space-2);
+  border-radius: var(--radius-full); font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
+.tier-badge.beginner { background: #e8f5e9; color: #2e7d32; }
+.tier-badge.intermediate { background: #e3f2fd; color: #1565c0; }
+.tier-badge.advanced { background: #fff3e0; color: #e65100; }
+.tier-badge.hardcore { background: #fce4ec; color: #c62828; }
+[data-theme="dark"] .tier-badge.beginner { background: #1b3a1e; color: #6daa45; }
+[data-theme="dark"] .tier-badge.intermediate { background: #1a2f42; color: #5591c7; }
+[data-theme="dark"] .tier-badge.advanced { background: #3a2a1a; color: #fdab43; }
+[data-theme="dark"] .tier-badge.hardcore { background: #3a1a20; color: #dd6974; }
+.tier-progress-wrap { flex: 1; }
+.tier-progress-bar { height: 6px; background: var(--color-surface-offset); border-radius: var(--radius-full); overflow: hidden; margin-bottom: 2px; }
+.tier-progress-fill { height: 100%; border-radius: var(--radius-full); transition: width 400ms ease; }
+.tier-progress-fill.pullup { background: var(--color-primary); }
+.tier-progress-fill.pushup { background: var(--color-secondary); }
+.tier-progress-meta { display: flex; justify-content: space-between; font-size: 0.6rem; color: var(--color-text-faint); }
+.tier-retest-btn { font-size: var(--text-xs); font-weight: 600; color: var(--color-primary); padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-full); background: var(--color-primary-highlight); min-height: 36px; margin-top: var(--space-2); }
+.tier-retest-btn:hover { background: var(--color-primary); color: var(--color-text-inverse); }
+
+/* Max Test Overlay */
+.maxtest-overlay { position: fixed; inset: 0; background: oklch(from var(--color-bg) l c h / 0.95); display: none;
+  place-items: center; z-index: 120; backdrop-filter: blur(12px); padding: var(--space-4); overflow-y: auto; }
+.maxtest-overlay.visible { display: grid; }
+.maxtest-card { text-align: center; width: 100%; max-width: 400px; padding: var(--space-6); }
+.maxtest-card h2 { font-size: var(--text-xl); font-weight: 700; margin-bottom: var(--space-2); }
+.maxtest-card .mt-subtitle { font-size: var(--text-sm); color: var(--color-text-muted); margin-bottom: var(--space-6); }
+.mt-step { display: none; }
+.mt-step.active { display: block; }
+.mt-warmup-list { text-align: left; list-style: none; counter-reset: warmup; margin-bottom: var(--space-6); }
+.mt-warmup-list li { counter-increment: warmup; padding: var(--space-2) 0 var(--space-2) var(--space-8);
+  position: relative; font-size: var(--text-sm); color: var(--color-text); border-bottom: 1px solid var(--color-divider); }
+.mt-warmup-list li:last-child { border-bottom: none; }
+.mt-warmup-list li::before { content: counter(warmup); position: absolute; left: 0; top: var(--space-2);
+  width: 24px; height: 24px; border-radius: var(--radius-full); background: var(--color-surface-offset);
+  display: grid; place-items: center; font-size: var(--text-xs); font-weight: 700; color: var(--color-text-muted); }
+.mt-count { font-size: clamp(5rem, 15vw, 8rem); font-weight: 700; line-height: 1;
+  font-variant-numeric: tabular-nums; color: var(--color-orange); margin: var(--space-4) 0; }
+.mt-tap-btn { width: clamp(130px, 36vw, 170px); height: clamp(130px, 36vw, 170px); border-radius: var(--radius-full);
+  color: var(--color-text-inverse); font-size: var(--text-xl); font-weight: 700;
+  box-shadow: var(--shadow-md); display: inline-grid; place-items: center;
+  background: var(--color-orange); margin: var(--space-4) 0; }
+.mt-tap-btn:hover { transform: scale(1.03); }
+.mt-tap-btn:active { transform: scale(0.97); }
+.mt-result { padding: var(--space-4); background: var(--color-surface); border-radius: var(--radius-lg); margin: var(--space-4) 0; }
+.mt-result-reps { font-size: var(--text-xl); font-weight: 700; color: var(--color-orange); }
+.mt-result-label { font-size: var(--text-sm); color: var(--color-text-muted); margin-bottom: var(--space-2); }
+.mt-promotion { padding: var(--space-4); background: var(--color-surface); border-radius: var(--radius-lg);
+  margin: var(--space-4) 0; border: 2px solid var(--color-orange); }
+.mt-promotion h3 { font-size: var(--text-lg); font-weight: 700; color: var(--color-orange); margin-bottom: var(--space-1); }
+.mt-promotion p { font-size: var(--text-sm); color: var(--color-text-muted); }
+
+/* Auto-detection prompt */
+.autodetect-banner { position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%); width: calc(100% - 2rem);
+  max-width: 440px; background: var(--color-surface); border-radius: var(--radius-lg); padding: var(--space-4);
+  box-shadow: var(--shadow-md); z-index: 90; border: 2px solid var(--color-orange); display: none; text-align: center; }
+.autodetect-banner.visible { display: block; animation: slideUp 300ms ease; }
+@keyframes slideUp { from { transform: translateX(-50%) translateY(20px); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }
+.autodetect-banner p { font-size: var(--text-sm); font-weight: 500; margin-bottom: var(--space-3); }
+.autodetect-btns { display: flex; gap: var(--space-2); justify-content: center; }
+.autodetect-btns button { padding: var(--space-2) var(--space-4); border-radius: var(--radius-full); font-size: var(--text-sm);
+  font-weight: 600; min-height: 40px; }
+.autodetect-yes { background: var(--color-orange); color: var(--color-text-inverse); }
+.autodetect-no { background: var(--color-surface-offset); }
+
+/* Retest Nudge Banner */
+.retest-nudge { background: var(--color-surface); border-radius: var(--radius-lg); padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-4); box-shadow: var(--shadow-sm); display: none; border-left: 3px solid var(--color-orange);
+  font-size: var(--text-sm); }
+.retest-nudge.visible { display: flex; align-items: center; gap: var(--space-3); }
+.retest-nudge .rn-text { flex: 1; color: var(--color-text-muted); }
+.retest-nudge .rn-text strong { color: var(--color-text); }
+.retest-nudge .rn-action { font-size: var(--text-xs); font-weight: 600; color: var(--color-primary); white-space: nowrap; }
+.retest-nudge .rn-dismiss { font-size: var(--text-xs); color: var(--color-text-faint); padding: var(--space-1); }
+
+/* Tier Settings */
+.tier-segmented { display: flex; gap: 2px; background: var(--color-surface-offset); border-radius: var(--radius-lg); padding: 2px; }
+.tier-seg-btn { flex: 1; padding: var(--space-2); border-radius: calc(var(--radius-lg) - 2px);
+  font-size: var(--text-xs); font-weight: 600; text-align: center; color: var(--color-text-muted);
+  text-transform: capitalize; min-height: 36px; }
+.tier-seg-btn.active { background: var(--color-surface-2); color: var(--color-text); box-shadow: var(--shadow-sm); }
+.retake-link { font-size: var(--text-xs); color: var(--color-primary); text-decoration: underline;
+  text-underline-offset: 2px; margin-top: var(--space-2); display: inline-block; }
+
+/* GTG Tips */
+.gtg-tip { text-align: center; padding: var(--space-2) var(--space-4); font-size: var(--text-xs);
+  font-style: italic; color: var(--color-text-faint); line-height: 1.4; min-height: 2.8em; }
+
+/* Timed exercise mode */
+.timer-display { font-size: clamp(5rem, 15vw, 8rem); font-weight: 700; line-height: 1;
+  font-variant-numeric: tabular-nums; user-select: none; }
+.timer-display.pullup { color: var(--color-primary); }
+.timer-display.pushup { color: var(--color-secondary); }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
@@ -546,6 +678,11 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
 
   <!-- WORKOUT -->
   <div class="panel active" id="panel-workout">
+    <div class="retest-nudge" id="retestNudge">
+      <span class="rn-text"><strong>Time to retest?</strong> It's been a while since your last max test.</span>
+      <button class="rn-action" id="retestNudgeAction">Test Now</button>
+      <button class="rn-dismiss" id="retestNudgeDismiss">×</button>
+    </div>
     <div class="exercise-picker">
       <button class="exercise-tab active" data-ex="pullup"><span class="ex-dot pullup"></span> Pull-Ups</button>
       <button class="exercise-tab" data-ex="pushup"><span class="ex-dot pushup"></span> Push-Ups</button>
@@ -573,11 +710,14 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
         <button class="action-btn primary pullup" id="finishSet">Finish Set</button>
       </div>
     </div>
+    <div class="gtg-tip" id="gtgTip"></div>
     <div id="currentSets"></div>
   </div>
 
   <!-- STATS -->
   <div class="panel" id="panel-stats">
+    <!-- Tier progress card -->
+    <div id="tierProgressSection"></div>
     <!-- Leaderboard section -->
     <div id="leaderboardSection"></div>
     <div class="chart-card">
@@ -650,6 +790,9 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
         <span class="setting-label" style="font-weight:400;color:var(--color-text-muted)">10 PM – 8 AM</span>
       </div>
     </div>
+
+    <!-- Tier Section -->
+    <div id="tierSettingsSection"></div>
 
     <!-- Household Section -->
     <div id="householdSection"></div>
@@ -737,6 +880,80 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
 
 <!-- Achievement Toast Container -->
 <div class="achievement-toast-container" id="achievementToastContainer"></div>
+
+<!-- Onboarding Assessment Overlay -->
+<div class="onboarding-overlay" id="onboardingOverlay">
+  <div class="onboarding-card">
+    <h2>Let's find your level</h2>
+    <p class="ob-subtitle">Two quick questions so we can pick the right exercises for you.</p>
+    <div class="ob-progress"><span class="ob-dot active" id="obDot1"></span><span class="ob-dot" id="obDot2"></span></div>
+    <div class="ob-step active" id="obStep1">
+      <p class="ob-question">How many pull-ups can you do in one set?</p>
+      <div class="ob-options" id="obPullOptions">
+        <button class="ob-option" data-value="beginner">0–3 reps (or none yet)</button>
+        <button class="ob-option" data-value="intermediate">4–10 reps</button>
+        <button class="ob-option" data-value="advanced">11–20 reps</button>
+        <button class="ob-option" data-value="hardcore">20+ reps</button>
+      </div>
+      <button class="ob-next" id="obNext1">Next</button>
+    </div>
+    <div class="ob-step" id="obStep2">
+      <p class="ob-question">How many push-ups can you do in one set?</p>
+      <div class="ob-options" id="obPushOptions">
+        <button class="ob-option" data-value="beginner">0–9 reps (or none yet)</button>
+        <button class="ob-option" data-value="intermediate">10–25 reps</button>
+        <button class="ob-option" data-value="advanced">25–40 reps</button>
+        <button class="ob-option" data-value="hardcore">40+ reps</button>
+      </div>
+      <button class="ob-next" id="obNext2">Start Training</button>
+    </div>
+  </div>
+</div>
+
+<!-- Max Test Overlay -->
+<div class="maxtest-overlay" id="maxTestOverlay">
+  <div class="maxtest-card">
+    <div class="mt-step active" id="mtWarmup">
+      <h2>Max Test</h2>
+      <p class="mt-subtitle" id="mtExLabel">Pull-Ups</p>
+      <ol class="mt-warmup-list">
+        <li>Do 5–10 easy reps as warm-up</li>
+        <li>Rest 2 minutes</li>
+        <li>Go all-out on a single max set</li>
+      </ol>
+      <button class="primary-btn" id="mtStartBtn">I'm Ready</button>
+      <div style="margin-top:var(--space-4)"><button class="action-btn" id="mtCancelBtn">Cancel</button></div>
+    </div>
+    <div class="mt-step" id="mtCount">
+      <h2>Go all out!</h2>
+      <p class="mt-subtitle">Tap for each rep</p>
+      <div class="mt-count" id="mtRepCount">0</div>
+      <button class="mt-tap-btn" id="mtTapBtn">TAP</button>
+      <div style="margin-top:var(--space-4)">
+        <button class="action-btn" id="mtUndoBtn">Undo</button>
+        <button class="action-btn" id="mtFinishBtn" style="margin-left:var(--space-2);background:var(--color-orange);color:var(--color-text-inverse)">Done</button>
+      </div>
+    </div>
+    <div class="mt-step" id="mtResult">
+      <h2>Results</h2>
+      <div class="mt-result">
+        <div class="mt-result-reps" id="mtResultReps">0</div>
+        <div class="mt-result-label" id="mtResultLabel">reps</div>
+      </div>
+      <div id="mtPromotion"></div>
+      <button class="primary-btn" id="mtDoneBtn" style="margin-top:var(--space-4)">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Auto-detection banner -->
+<div class="autodetect-banner" id="autodetectBanner">
+  <p>That looked like a new max! Was that all-out?</p>
+  <div class="autodetect-btns">
+    <button class="autodetect-yes" id="autodetectYes">Yes!</button>
+    <button class="autodetect-no" id="autodetectNo">Nah</button>
+  </div>
+</div>
 
 <script>
 // ─── SQL Migration (run this in Supabase SQL editor): ───
@@ -1458,6 +1675,13 @@ function updateWeightVisibility() {
   const el = document.getElementById('weightInput');
   if (state.variant === 'weighted') { el.classList.add('visible'); } else { el.classList.remove('visible'); }
 }
+function variantLabelShort(v) {
+  return { standard:'STD', eccentric:'ECC', weighted:'WTD', diamond:'DIA', archer:'ARC',
+    dead_hang:'HANG', band_assisted:'BAND', inverted_row:'ROW', chinup:'CHIN', neutral:'NEUT',
+    close_grip:'CLOSE', wide:'WIDE', slow_tempo:'SLOW', lsit:'L-SIT', typewriter:'TYPE', towel:'TOWL',
+    wall:'WALL', incline:'INCL', knee:'KNEE', eccentric_timed:'ECC', decline:'DECL', tempo:'TEMP',
+    pike:'PIKE', deficit:'DEF', onearm:'1ARM', planche:'PLNCH', handstand:'HSPU' }[v] || v.toUpperCase();
+}
 function renderWeight() {
   document.getElementById('weightValue').textContent = state.currentWeight + ' lb';
 }
@@ -1507,6 +1731,158 @@ const EXERCISE_DATA = {
     target: 'Chest', secondary: ['Triceps', 'Front Delts', 'Core', 'Obliques'],
     steps: ['Start in a wide push-up position, fingers pointing outward.','Shift your weight to one arm and lower toward that side.','The other arm extends straight out for support, not pushing.','Push back up from the loaded arm.','Alternate sides each rep, or do all reps on one side then switch.'],
     tips: ['This is a precursor to one-arm push-ups.','Keep your body as straight as possible — resist rotation.','Lower the difficulty by bending the extended arm slightly.']
+  },
+  // ─── Pull-Up Tier Variants ───
+  pullup_dead_hang: {
+    name: 'Dead Hang', img: 'img/exercise-pullup-standard.webp', difficulty: 'Beginner', timed: true,
+    target: 'Grip / Forearms', secondary: ['Lats', 'Shoulders', 'Core'],
+    steps: ['Grip the bar with palms facing away, shoulder-width apart.','Step off the platform and hang with arms fully extended.','Keep shoulders engaged — pull them slightly down and back.','Hold as long as you can while breathing steadily.','Step down when you can no longer hold.'],
+    tips: ['Aim for 20–30 seconds to start, building to 60+ seconds.','Great for building the grip strength needed for pull-ups.','Relax your body — tension wastes energy.']
+  },
+  pullup_band_assisted: {
+    name: 'Band-Assisted Pull-Up', img: 'img/exercise-pullup-standard.webp', difficulty: 'Beginner',
+    target: 'Lats', secondary: ['Biceps', 'Rear Delts', 'Core'],
+    steps: ['Loop a resistance band over the bar.','Step or kneel into the band for assistance.','Grip the bar shoulder-width apart, palms away.','Pull your chin above the bar using the band\'s help.','Lower under control to full extension.'],
+    tips: ['Use thicker bands for more help, thinner bands as you progress.','Focus on the same strict form as a full pull-up.','Graduate to thinner bands before attempting unassisted reps.']
+  },
+  pullup_inverted_row: {
+    name: 'Inverted Row', img: 'img/exercise-pullup-standard.webp', difficulty: 'Beginner',
+    target: 'Lats', secondary: ['Biceps', 'Rear Delts', 'Rhomboids', 'Core'],
+    steps: ['Set a bar at waist height (Smith machine or low bar).','Hang underneath with arms extended, body straight.','Pull your chest to the bar by driving elbows back.','Squeeze shoulder blades together at the top.','Lower under control back to the start.'],
+    tips: ['The more horizontal your body, the harder it gets.','Keep your body rigid like a plank throughout.','Great stepping stone toward full pull-ups.']
+  },
+  pullup_chinup: {
+    name: 'Chin-Up', img: 'img/exercise-pullup-standard.webp', difficulty: 'Intermediate',
+    target: 'Biceps', secondary: ['Lats', 'Rear Delts', 'Core'],
+    steps: ['Grip the bar with palms facing toward you, shoulder-width apart.','Hang with arms fully extended.','Pull until your chin clears the bar — focus on squeezing biceps.','Lower under control to full arm extension.','Avoid swinging or kipping.'],
+    tips: ['Chin-ups emphasize biceps more than standard pull-ups.','Slightly easier than pull-ups for most people.','Keep elbows pointed forward, not flaring out.']
+  },
+  pullup_neutral: {
+    name: 'Neutral Grip Pull-Up', img: 'img/exercise-pullup-standard.webp', difficulty: 'Intermediate',
+    target: 'Lats', secondary: ['Biceps', 'Brachialis', 'Rear Delts', 'Core'],
+    steps: ['Grip parallel handles with palms facing each other.','Hang with arms fully extended.','Pull up until chin clears the handles.','Lower under control.','Maintain a slight lean back throughout.'],
+    tips: ['Easiest on the wrists and shoulders of all grip variations.','Great for high-volume training.','Targets the brachialis for arm thickness.']
+  },
+  pullup_close_grip: {
+    name: 'Close Grip Pull-Up', img: 'img/exercise-pullup-standard.webp', difficulty: 'Advanced',
+    target: 'Lats', secondary: ['Biceps', 'Lower Lats', 'Core'],
+    steps: ['Grip the bar with hands 6–8 inches apart.','Hang with arms fully extended.','Pull up, focusing on driving elbows to your sides.','Chin clears the bar at the top.','Lower under control.'],
+    tips: ['Emphasizes the lower lats and biceps.','Keep elbows close to your body throughout.','Harder than shoulder-width grip for most people.']
+  },
+  pullup_wide: {
+    name: 'Wide Grip Pull-Up', img: 'img/exercise-pullup-standard.webp', difficulty: 'Advanced',
+    target: 'Lats', secondary: ['Teres Major', 'Rear Delts', 'Core'],
+    steps: ['Grip the bar 1.5× shoulder width, palms facing away.','Hang with arms fully extended.','Pull up by driving elbows down and wide.','Chin clears the bar — focus on lat contraction.','Lower under control to full extension.'],
+    tips: ['Builds the wide V-taper look.','Shorter range of motion but greater lat isolation.','If shoulders hurt, narrow your grip slightly.']
+  },
+  pullup_slow_tempo: {
+    name: 'Slow Tempo Pull-Up', img: 'img/exercise-pullup-standard.webp', difficulty: 'Advanced',
+    target: 'Lats', secondary: ['Biceps', 'Rear Delts', 'Core', 'Grip'],
+    steps: ['Grip the bar shoulder-width apart.','Pull up slowly over 3–4 seconds.','Pause at the top for 1 second.','Lower over 3–4 seconds.','Pause at the bottom for 1 second before the next rep.'],
+    tips: ['Eliminates momentum — pure strength.','Expect to do 40–50% fewer reps than normal.','Excellent for breaking through plateaus.']
+  },
+  pullup_archer: {
+    name: 'Archer Pull-Up', img: 'img/exercise-pullup-weighted.webp', difficulty: 'Hardcore',
+    target: 'Lats', secondary: ['Biceps', 'Rear Delts', 'Core', 'Grip'],
+    steps: ['Grip the bar wide with both hands.','Pull up toward one hand while extending the other arm along the bar.','The working arm does most of the pulling.','Lower under control.','Alternate sides each rep.'],
+    tips: ['A progression toward one-arm pull-ups.','The extended arm assists minimally — try to rely on the working arm.','Keep your core tight to prevent rotation.']
+  },
+  pullup_lsit: {
+    name: 'L-Sit Pull-Up', img: 'img/exercise-pullup-weighted.webp', difficulty: 'Hardcore',
+    target: 'Lats', secondary: ['Core', 'Hip Flexors', 'Biceps', 'Grip'],
+    steps: ['Grip the bar shoulder-width apart.','Raise legs to 90° (L-sit position) and hold them there.','Pull up while maintaining the L-sit.','Chin clears the bar.','Lower under control, legs still elevated.'],
+    tips: ['Massively increases core demand.','Start with knees bent if straight legs are too hard.','Don\'t let your legs swing — stay controlled.']
+  },
+  pullup_typewriter: {
+    name: 'Typewriter Pull-Up', img: 'img/exercise-pullup-weighted.webp', difficulty: 'Hardcore',
+    target: 'Lats', secondary: ['Biceps', 'Rear Delts', 'Core'],
+    steps: ['Pull up to the top of a wide-grip pull-up.','At the top, shift your body horizontally to one hand.','Slide across to the other hand while staying at the top.','That\'s one rep. Lower and repeat, or continue sliding.','Keep chin above bar throughout the lateral movement.'],
+    tips: ['Extremely advanced — master wide-grip pull-ups first.','Builds insane lateral pulling strength.','Start with short side-to-side movements and increase range.']
+  },
+  pullup_towel: {
+    name: 'Towel Pull-Up', img: 'img/exercise-pullup-weighted.webp', difficulty: 'Hardcore',
+    target: 'Grip', secondary: ['Lats', 'Biceps', 'Forearms', 'Core'],
+    steps: ['Drape two towels over the bar, shoulder-width apart.','Grip one towel in each hand.','Hang with arms fully extended.','Pull up by squeezing the towels and driving elbows down.','Lower under control.'],
+    tips: ['The ultimate grip strength builder.','Expect significantly fewer reps than bar pull-ups.','Use thick towels for maximum grip challenge.']
+  },
+  // ─── Push-Up Tier Variants ───
+  pushup_wall: {
+    name: 'Wall Push-Up', img: 'img/exercise-pushup-standard.webp', difficulty: 'Beginner',
+    target: 'Chest', secondary: ['Triceps', 'Front Delts'],
+    steps: ['Stand arm\'s length from a wall.','Place hands on the wall at shoulder height, shoulder-width apart.','Lean in, bending elbows to bring your chest toward the wall.','Push back to the starting position.','Keep your body straight throughout.'],
+    tips: ['Perfect for absolute beginners.','The farther your feet from the wall, the harder it gets.','Focus on slow, controlled movement.']
+  },
+  pushup_incline: {
+    name: 'Incline Push-Up', img: 'img/exercise-pushup-standard.webp', difficulty: 'Beginner',
+    target: 'Chest', secondary: ['Triceps', 'Front Delts', 'Core'],
+    steps: ['Place hands on a bench, step, or sturdy elevated surface.','Extend body into a straight line from head to heels.','Lower chest toward the surface, elbows at ~45°.','Push back up to full extension.','Keep core tight — no sagging.'],
+    tips: ['Lower the surface height to increase difficulty.','Great bridge between wall push-ups and floor push-ups.','Aim for a surface at knee to hip height to start.']
+  },
+  pushup_knee: {
+    name: 'Knee Push-Up', img: 'img/exercise-pushup-standard.webp', difficulty: 'Beginner',
+    target: 'Chest', secondary: ['Triceps', 'Front Delts', 'Core'],
+    steps: ['Start in a plank position, then lower your knees to the floor.','Hands shoulder-width apart, body straight from knees to head.','Lower your chest toward the floor.','Push back up to full arm extension.','Keep hips in line — don\'t pike up.'],
+    tips: ['Not "girl push-ups" — a legit progression tool.','Cross your ankles behind you for stability.','Progress to full push-ups when you can do 15+ reps.']
+  },
+  pushup_eccentric_timed: {
+    name: 'Eccentric Push-Up (Timed)', img: 'img/exercise-pushup-standard.webp', difficulty: 'Beginner', timed: true,
+    target: 'Chest', secondary: ['Triceps', 'Front Delts', 'Core'],
+    steps: ['Start in a full push-up position.','Lower yourself as slowly as possible toward the floor.','Aim for 5–10 seconds on the way down.','Once on the floor, reset to the top position.','Repeat for the timed duration.'],
+    tips: ['Builds the strength needed for full push-ups.','Focus on maximum time under tension.','Use knee push-up position to reset at the top if needed.']
+  },
+  pushup_wide: {
+    name: 'Wide Push-Up', img: 'img/exercise-pushup-standard.webp', difficulty: 'Intermediate',
+    target: 'Chest', secondary: ['Front Delts', 'Triceps', 'Core'],
+    steps: ['Place hands about 1.5× shoulder width apart.','Extend body into a plank position.','Lower chest toward the floor with elbows flaring wider.','Push back up to full extension.','Maintain a straight body line throughout.'],
+    tips: ['Emphasizes the outer chest and front delts.','Slightly easier than standard push-ups for most.','Don\'t go too wide — hands should stay under your elbows at the bottom.']
+  },
+  pushup_decline: {
+    name: 'Decline Push-Up', img: 'img/exercise-pushup-standard.webp', difficulty: 'Intermediate',
+    target: 'Upper Chest', secondary: ['Triceps', 'Front Delts', 'Core'],
+    steps: ['Place feet on an elevated surface (bench, step, chair).','Hands on the floor, shoulder-width apart.','Lower your chest toward the floor.','Push back up to full extension.','Keep your body straight — don\'t let hips sag.'],
+    tips: ['The higher your feet, the harder and more shoulder-dominant it gets.','Targets the upper chest more than flat push-ups.','Start with a low step and progress higher.']
+  },
+  pushup_tempo: {
+    name: 'Tempo Push-Up', img: 'img/exercise-pushup-standard.webp', difficulty: 'Intermediate',
+    target: 'Chest', secondary: ['Triceps', 'Front Delts', 'Core'],
+    steps: ['Standard push-up position.','Lower over 3–4 seconds.','Pause at the bottom for 1 second.','Push up over 1–2 seconds.','Pause at the top for 1 second.'],
+    tips: ['Eliminates momentum for better muscle engagement.','Expect fewer reps than normal — that\'s the point.','Excellent for building control and strength.']
+  },
+  pushup_weighted: {
+    name: 'Weighted Push-Up', img: 'img/exercise-pushup-standard.webp', difficulty: 'Advanced',
+    target: 'Chest', secondary: ['Triceps', 'Front Delts', 'Core'],
+    steps: ['Place a weight plate or wear a weighted vest.','Assume standard push-up position.','Lower chest toward the floor with the added load.','Push back up to full extension.','Maintain perfect form — the weight amplifies any flaws.'],
+    tips: ['Start with 10% of bodyweight and progress slowly.','A weight vest is more stable than a plate on your back.','Keep reps in the 5–10 range for strength building.']
+  },
+  pushup_pike: {
+    name: 'Pike Push-Up', img: 'img/exercise-pushup-standard.webp', difficulty: 'Advanced',
+    target: 'Shoulders', secondary: ['Triceps', 'Upper Chest', 'Core'],
+    steps: ['Start in a downward-dog position — hips high, body in an inverted V.','Hands shoulder-width apart, head between arms.','Bend elbows and lower head toward the floor.','Push back up to the inverted V position.','Keep legs as straight as possible.'],
+    tips: ['Progression toward handstand push-ups.','The closer your feet to your hands, the harder it gets.','Elevate feet on a box for more shoulder emphasis.']
+  },
+  pushup_deficit: {
+    name: 'Deficit Push-Up', img: 'img/exercise-pushup-standard.webp', difficulty: 'Advanced',
+    target: 'Chest', secondary: ['Triceps', 'Front Delts', 'Core'],
+    steps: ['Place hands on two small platforms (push-up handles, books, plates).','Assume standard push-up position.','Lower your chest BELOW hand level for extra range of motion.','Push back up to full extension.','Keep elbows at ~45° throughout.'],
+    tips: ['Extra range of motion means extra muscle activation.','3–4 inches of deficit is plenty.','Excellent for breaking through push-up plateaus.']
+  },
+  pushup_onearm: {
+    name: 'One-Arm Push-Up', img: 'img/exercise-pushup-archer.webp', difficulty: 'Hardcore',
+    target: 'Chest', secondary: ['Triceps', 'Front Delts', 'Core', 'Obliques'],
+    steps: ['Widen your stance for stability.','Place one hand on the floor under your chest, other behind your back.','Lower your chest toward the floor — fight rotation.','Push back up to full extension.','Complete all reps on one side, then switch.'],
+    tips: ['One of the hardest bodyweight exercises.','Master archer push-ups first.','Wider stance makes it easier — narrow your stance over time.']
+  },
+  pushup_planche: {
+    name: 'Planche Lean (Timed)', img: 'img/exercise-pushup-archer.webp', difficulty: 'Hardcore', timed: true,
+    target: 'Front Delts', secondary: ['Chest', 'Biceps', 'Core', 'Wrists'],
+    steps: ['Start in a push-up position.','Lean forward, shifting weight over your hands.','Hands should be by your waist, not shoulders.','Hold the forward lean as long as you can.','Keep arms locked and body straight.'],
+    tips: ['This is a precursor to the full planche — start with a slight lean.','Wrist flexibility is crucial — warm up first.','The farther you lean, the harder it gets.']
+  },
+  pushup_handstand: {
+    name: 'Handstand Push-Up', img: 'img/exercise-pushup-archer.webp', difficulty: 'Hardcore',
+    target: 'Shoulders', secondary: ['Triceps', 'Upper Chest', 'Core', 'Traps'],
+    steps: ['Kick up into a handstand against a wall.','Hands shoulder-width apart, body tight.','Lower your head toward the floor by bending elbows.','Push back up to full lockout.','Maintain balance and control throughout.'],
+    tips: ['Master pike push-ups with elevated feet first.','Use a wall for balance while building strength.','Keep your core extremely tight to prevent arching.']
   }
 };
 
@@ -1589,13 +1965,12 @@ function renderCurrentSets() {
   statsHtml += `<div><div class="stat-value" style="color:var(--color-text)">${state.sets.length}</div><div class="stat-label">Total sets</div></div>`;
   statsHtml += '</div>';
 
-  const variantLabel = (v) => ({ standard:'STD', eccentric:'ECC', weighted:'WTD', diamond:'DIA', archer:'ARC' }[v] || v.toUpperCase());
   const weightLabel = (s) => s.weight ? ` @ ${s.weight}lb` : '';
 
   c.innerHTML = `
     <div class="session-card">${statsHtml}</div>
     <ul class="set-list">${state.sets.map((s, i) =>
-      `<li class="set-item"><span class="set-num"><span class="ex-dot ${s.exercise}"></span> Set ${i+1} <span class="set-type">${variantLabel(s.variant)}${weightLabel(s)}</span></span><span class="set-reps">${s.reps}</span></li>`
+      `<li class="set-item"><span class="set-num"><span class="ex-dot ${s.exercise}"></span> Set ${i+1} <span class="set-type">${variantLabelShort(s.variant)}${weightLabel(s)}</span></span><span class="set-reps">${s.reps}</span></li>`
     ).reverse().join('')}</ul>
     <div style="padding:var(--space-3) 0;text-align:center">
       <button class="action-btn primary pullup" onclick="saveWorkout()">Save Workout</button>
@@ -1711,7 +2086,7 @@ function showDayDetail(dateKey) {
     sets.forEach(s => allSets.push(s));
   });
 
-  const vLabel = (v) => ({ standard:'STD', eccentric:'ECC', weighted:'WTD', diamond:'DIA', archer:'ARC' }[v] || v.toUpperCase());
+  const vLabel = (v) => variantLabelShort(v);
   const wLabel = (s) => s.weight ? ` @ ${s.weight}lb` : '';
 
   let html = '<div class="day-detail-stats">';
@@ -2239,7 +2614,7 @@ function renderHistory() {
     c.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><p>No workouts yet. Finish a workout to see your history here.</p></div>`;
     return;
   }
-  const vLabel = (v) => ({ standard:'', eccentric:' ecc', weighted:' wtd', diamond:' dia', archer:' arc' }[v] || '');
+  const vLabel = (v) => ' ' + variantLabelShort(v).toLowerCase();
   const wLabel = (s) => s.weight ? ` @${s.weight}lb` : '';
   c.innerHTML = filtered.map((w, idx) => {
     const realIdx = state.history.indexOf(w);
@@ -2437,6 +2812,738 @@ window.saveWorkout = function() {
   origSaveWorkout();
   if (document.getElementById('nudgeToggle').checked) startNudgeTimer();
 };
+
+// ═══════════════════════════════════════════════════════
+// ─── TIER PROGRESSION SYSTEM ───
+// ═══════════════════════════════════════════════════════
+
+// ─── Tier Definitions ───
+const TIER_ORDER = ['beginner', 'intermediate', 'advanced', 'hardcore'];
+const TIER_THRESHOLDS = {
+  pullup: { beginner: 0, intermediate: 4, advanced: 11, hardcore: 21 },
+  pushup: { beginner: 0, intermediate: 10, advanced: 25, hardcore: 41 }
+};
+const TIER_MAX_FOR_LEVEL = {
+  pullup: { beginner: 3, intermediate: 10, advanced: 20, hardcore: Infinity },
+  pushup: { beginner: 9, intermediate: 24, advanced: 40, hardcore: Infinity }
+};
+
+const TIER_VARIANTS = {
+  pullup: {
+    beginner: ['dead_hang', 'band_assisted', 'eccentric', 'inverted_row'],
+    intermediate: ['standard', 'chinup', 'neutral', 'eccentric', 'band_assisted'],
+    advanced: ['standard', 'chinup', 'weighted', 'close_grip', 'wide', 'slow_tempo'],
+    hardcore: ['weighted', 'archer', 'lsit', 'typewriter', 'towel']
+  },
+  pushup: {
+    beginner: ['wall', 'incline', 'knee', 'eccentric_timed'],
+    intermediate: ['standard', 'diamond', 'wide', 'decline', 'tempo'],
+    advanced: ['standard', 'diamond', 'archer', 'weighted', 'pike', 'deficit'],
+    hardcore: ['archer', 'weighted', 'onearm', 'planche', 'handstand']
+  }
+};
+
+const VARIANT_LABELS = {
+  standard: 'Standard', eccentric: 'Eccentric', weighted: 'Weighted',
+  diamond: 'Diamond', archer: 'Archer',
+  dead_hang: 'Dead Hang', band_assisted: 'Band', inverted_row: 'Inv. Row',
+  chinup: 'Chin-Up', neutral: 'Neutral', close_grip: 'Close', wide: 'Wide',
+  slow_tempo: 'Slow', lsit: 'L-Sit', typewriter: 'Typewriter', towel: 'Towel',
+  wall: 'Wall', incline: 'Incline', knee: 'Knee', eccentric_timed: 'Eccentric',
+  decline: 'Decline', tempo: 'Tempo', pike: 'Pike', deficit: 'Deficit',
+  onearm: 'One-Arm', planche: 'Planche', handstand: 'Handstand'
+};
+
+// ─── Tier State Management ───
+function getDefaultTierState() {
+  return {
+    pullup: { tier: null, max: 0, lastTestDate: null },
+    pushup: { tier: null, max: 0, lastTestDate: null },
+    assessed: false
+  };
+}
+
+function loadTierState() {
+  if (state.tiers && state.tiers.assessed) return state.tiers;
+  return getDefaultTierState();
+}
+
+function saveTierState() {
+  saveStateLocal();
+  saveSettingsToCloud();
+}
+
+// Patch saveStateLocal to include tiers
+const _origSaveStateLocal = saveStateLocal;
+window.saveStateLocal = function() {
+  try {
+    localStorage.setItem('repcounter_v2', JSON.stringify({
+      history: state.history, restSeconds: state.restSeconds,
+      targetPullups: state.targetPullups, targetPushups: state.targetPushups,
+      tiers: state.tiers
+    }));
+  } catch(e) {}
+};
+// Reassign the module-level reference
+saveStateLocal = window.saveStateLocal;
+
+// Migrate: load tiers from existing state if present
+(function migrateTiers() {
+  const saved = loadStateLocal();
+  if (saved && saved.tiers) {
+    state.tiers = saved.tiers;
+  } else {
+    state.tiers = getDefaultTierState();
+  }
+})();
+
+function getTier(exercise) {
+  return state.tiers && state.tiers[exercise] ? state.tiers[exercise].tier : null;
+}
+
+function getTierIndex(tier) {
+  return TIER_ORDER.indexOf(tier);
+}
+
+function tierFromMax(exercise, max) {
+  const th = TIER_THRESHOLDS[exercise];
+  if (max >= th.hardcore) return 'hardcore';
+  if (max >= th.advanced) return 'advanced';
+  if (max >= th.intermediate) return 'intermediate';
+  return 'beginner';
+}
+
+function setTierForExercise(exercise, tier, max, isTest) {
+  if (!state.tiers) state.tiers = getDefaultTierState();
+  state.tiers[exercise].tier = tier;
+  if (max !== undefined && max !== null) state.tiers[exercise].max = max;
+  if (isTest) state.tiers[exercise].lastTestDate = toLocalDateKey(new Date());
+  state.tiers.assessed = true;
+  // Update GTG target
+  const target = Math.max(1, Math.round((state.tiers[exercise].max || 1) * 0.5));
+  if (exercise === 'pullup') {
+    state.targetPullups = target;
+    document.getElementById('targetPullups').value = target;
+  } else {
+    state.targetPushups = target;
+    document.getElementById('targetPushups').value = target;
+  }
+  saveTierState();
+}
+
+// ─── Onboarding Assessment ───
+let obPullTier = null, obPushTier = null;
+
+function showOnboarding() {
+  obPullTier = null; obPushTier = null;
+  document.getElementById('onboardingOverlay').classList.add('visible');
+  document.getElementById('obStep1').classList.add('active');
+  document.getElementById('obStep2').classList.remove('active');
+  document.getElementById('obDot1').classList.add('active');
+  document.getElementById('obDot2').classList.remove('active');
+  document.getElementById('obNext1').classList.remove('enabled');
+  document.getElementById('obNext2').classList.remove('enabled');
+  document.querySelectorAll('#obPullOptions .ob-option').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('#obPushOptions .ob-option').forEach(b => b.classList.remove('selected'));
+}
+
+function hideOnboarding() {
+  document.getElementById('onboardingOverlay').classList.remove('visible');
+}
+
+// Pull-up option clicks
+document.querySelectorAll('#obPullOptions .ob-option').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#obPullOptions .ob-option').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    obPullTier = btn.dataset.value;
+    document.getElementById('obNext1').classList.add('enabled');
+  });
+});
+
+// Push-up option clicks
+document.querySelectorAll('#obPushOptions .ob-option').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#obPushOptions .ob-option').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    obPushTier = btn.dataset.value;
+    document.getElementById('obNext2').classList.add('enabled');
+  });
+});
+
+// Next button (step 1 -> step 2)
+document.getElementById('obNext1').addEventListener('click', () => {
+  if (!obPullTier) return;
+  document.getElementById('obStep1').classList.remove('active');
+  document.getElementById('obStep2').classList.add('active');
+  document.getElementById('obDot1').classList.remove('active');
+  document.getElementById('obDot2').classList.add('active');
+});
+
+// Finish assessment (step 2)
+document.getElementById('obNext2').addEventListener('click', () => {
+  if (!obPushTier) return;
+  // Assign tiers based on selection
+  const pullMax = { beginner: 2, intermediate: 7, advanced: 15, hardcore: 25 }[obPullTier];
+  const pushMax = { beginner: 5, intermediate: 17, advanced: 32, hardcore: 50 }[obPushTier];
+  setTierForExercise('pullup', obPullTier, pullMax, true);
+  setTierForExercise('pushup', obPushTier, pushMax, true);
+  hideOnboarding();
+  // Refresh variants for current exercise
+  setExercise(state.exercise);
+  renderTierProgressCard();
+  renderTierSettings();
+  showGtgTip();
+  showToast('Welcome! Exercises matched to your level.');
+});
+
+// ─── Modify setExercise to filter variants by tier ───
+const _origSetExercise = setExercise;
+window.setExercise = function(ex) {
+  state.exercise = ex;
+  document.querySelectorAll('.exercise-tab').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.exercise-tab[data-ex="${ex}"]`).classList.add('active');
+  document.getElementById('repCount').className = 'count-display ' + ex;
+  document.getElementById('addRep').className = 'counter-btn ' + ex;
+  document.getElementById('finishSet').className = 'action-btn primary ' + ex;
+
+  const vs = document.getElementById('variantSelector');
+  const tier = getTier(ex);
+
+  if (tier && TIER_VARIANTS[ex][tier]) {
+    const variants = TIER_VARIANTS[ex][tier];
+    vs.innerHTML = variants.map((v, i) => {
+      const label = VARIANT_LABELS[v] || v;
+      return `<button class="type-btn${i === 0 ? ' active' : ''}" data-type="${v}">${label}</button>`;
+    }).join('');
+    state.variant = variants[0];
+  } else {
+    // Fallback: original variants if no tier set
+    if (ex === 'pullup') {
+      vs.innerHTML = '<button class="type-btn active" data-type="standard">Standard</button><button class="type-btn" data-type="eccentric">Eccentric</button><button class="type-btn" data-type="weighted">Weighted</button>';
+    } else {
+      vs.innerHTML = '<button class="type-btn active" data-type="standard">Standard</button><button class="type-btn" data-type="diamond">Diamond</button><button class="type-btn" data-type="archer">Archer</button>';
+    }
+    state.variant = 'standard';
+  }
+
+  vs.querySelectorAll('.type-btn').forEach(b => b.addEventListener('click', () => {
+    vs.querySelectorAll('.type-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active'); state.variant = b.dataset.type;
+    updateWeightVisibility();
+    updateExerciseHero();
+    updateTimedMode();
+  }));
+
+  document.querySelector('.rest-timer').style.color = ex === 'pullup' ? 'var(--color-primary)' : 'var(--color-secondary)';
+  updateWeightVisibility();
+  updateExerciseHero();
+  updateTimedMode();
+  showGtgTip();
+};
+setExercise = window.setExercise;
+
+// Re-bind exercise tab clicks to use new setExercise
+document.querySelectorAll('.exercise-tab').forEach(btn => {
+  btn.replaceWith(btn.cloneNode(true));
+});
+document.querySelectorAll('.exercise-tab').forEach(btn => {
+  btn.addEventListener('click', () => setExercise(btn.dataset.ex));
+});
+
+// ─── Timed Exercise Mode ───
+let timedInterval = null;
+let timedSeconds = 0;
+let timedRunning = false;
+
+function isTimedExercise() {
+  const key = getExerciseKey();
+  const data = EXERCISE_DATA[key];
+  return data && data.timed === true;
+}
+
+function updateTimedMode() {
+  const isTimed = isTimedExercise();
+  const repDisplay = document.getElementById('repCount');
+  const addRepBtn = document.getElementById('addRep');
+
+  stopTimedExercise();
+
+  if (isTimed) {
+    repDisplay.textContent = '0:00';
+    repDisplay.classList.add('timer-display');
+    addRepBtn.textContent = 'START';
+    state.currentReps = 0;
+  } else {
+    repDisplay.textContent = state.currentReps || '0';
+    repDisplay.classList.remove('timer-display');
+    addRepBtn.textContent = 'TAP';
+  }
+}
+
+function formatTimerDisplay(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return m + ':' + String(s).padStart(2, '0');
+}
+
+function toggleTimedExercise() {
+  if (timedRunning) {
+    stopTimedExercise();
+  } else {
+    startTimedExercise();
+  }
+}
+
+function startTimedExercise() {
+  timedRunning = true;
+  timedSeconds = 0;
+  const repDisplay = document.getElementById('repCount');
+  const addRepBtn = document.getElementById('addRep');
+  addRepBtn.textContent = 'STOP';
+  timedInterval = setInterval(() => {
+    timedSeconds++;
+    repDisplay.textContent = formatTimerDisplay(timedSeconds);
+  }, 1000);
+}
+
+function stopTimedExercise() {
+  if (timedInterval) { clearInterval(timedInterval); timedInterval = null; }
+  if (timedRunning) {
+    state.currentReps = timedSeconds; // store seconds as "reps" for timed exercises
+    const addRepBtn = document.getElementById('addRep');
+    addRepBtn.textContent = 'START';
+  }
+  timedRunning = false;
+}
+
+// Override addRep click for timed exercises
+const origAddRepBtn = document.getElementById('addRep');
+const newAddRepBtn = origAddRepBtn.cloneNode(true);
+origAddRepBtn.parentNode.replaceChild(newAddRepBtn, origAddRepBtn);
+newAddRepBtn.addEventListener('click', () => {
+  if (isTimedExercise()) {
+    toggleTimedExercise();
+  } else {
+    state.currentReps++;
+    document.getElementById('repCount').textContent = state.currentReps;
+    document.getElementById('repCount').style.transform = 'scale(1.08)';
+    setTimeout(() => document.getElementById('repCount').style.transform = 'scale(1)', 120);
+  }
+});
+
+// ─── Tier Progress Card ───
+function renderTierProgressCard() {
+  const section = document.getElementById('tierProgressSection');
+  if (!state.tiers || !state.tiers.assessed) {
+    section.innerHTML = '';
+    return;
+  }
+
+  function progressInfo(exercise) {
+    const t = state.tiers[exercise];
+    const tier = t.tier;
+    const max = t.max || 0;
+    const tierIdx = getTierIndex(tier);
+    const nextTier = tierIdx < 3 ? TIER_ORDER[tierIdx + 1] : null;
+    const currentThreshold = TIER_THRESHOLDS[exercise][tier];
+    const nextThreshold = nextTier ? TIER_THRESHOLDS[exercise][nextTier] : max;
+    const progress = nextTier ? Math.min(100, ((max - currentThreshold) / (nextThreshold - currentThreshold)) * 100) : 100;
+    const lastTest = t.lastTestDate;
+    return { tier, max, nextTier, progress, lastTest, currentThreshold, nextThreshold };
+  }
+
+  const pull = progressInfo('pullup');
+  const push = progressInfo('pushup');
+
+  function renderRow(exercise, info, colorClass) {
+    const label = exercise === 'pullup' ? 'Pull-ups' : 'Push-ups';
+    const nextLabel = info.nextTier ? `Next: ${info.nextThreshold} reps` : 'Max tier!';
+    const testLabel = info.lastTest ? `Tested ${info.lastTest}` : 'Not tested';
+    return `
+      <div class="tier-row">
+        <span class="tier-ex-label">${label}</span>
+        <span class="tier-badge ${info.tier}">${info.tier}</span>
+        <div class="tier-progress-wrap">
+          <div class="tier-progress-bar"><div class="tier-progress-fill ${colorClass}" style="width:${info.progress}%"></div></div>
+          <div class="tier-progress-meta"><span>Best: ${info.max} reps</span><span>${nextLabel}</span></div>
+        </div>
+      </div>`;
+  }
+
+  section.innerHTML = `
+    <div class="tier-card">
+      <h3><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg> Tier Progress</h3>
+      ${renderRow('pullup', pull, 'pullup')}
+      ${renderRow('pushup', push, 'pushup')}
+      <div style="text-align:center">
+        <button class="tier-retest-btn" onclick="startMaxTest('pullup')">Retest Pull-Ups</button>
+        <button class="tier-retest-btn" onclick="startMaxTest('pushup')" style="margin-left:var(--space-2)">Retest Push-Ups</button>
+      </div>
+    </div>`;
+}
+
+// ─── Max Test Mode ───
+let mtExercise = 'pullup';
+let mtReps = 0;
+
+function startMaxTest(exercise) {
+  mtExercise = exercise;
+  mtReps = 0;
+  const overlay = document.getElementById('maxTestOverlay');
+  document.getElementById('mtExLabel').textContent = exercise === 'pullup' ? 'Pull-Ups' : 'Push-Ups';
+  document.getElementById('mtRepCount').textContent = '0';
+  document.getElementById('mtPromotion').innerHTML = '';
+  // Reset steps
+  document.querySelectorAll('.mt-step').forEach(s => s.classList.remove('active'));
+  document.getElementById('mtWarmup').classList.add('active');
+  overlay.classList.add('visible');
+}
+
+function closeMaxTest() {
+  document.getElementById('maxTestOverlay').classList.remove('visible');
+}
+
+document.getElementById('mtCancelBtn').addEventListener('click', closeMaxTest);
+
+document.getElementById('mtStartBtn').addEventListener('click', () => {
+  document.querySelectorAll('.mt-step').forEach(s => s.classList.remove('active'));
+  document.getElementById('mtCount').classList.add('active');
+  mtReps = 0;
+  document.getElementById('mtRepCount').textContent = '0';
+});
+
+document.getElementById('mtTapBtn').addEventListener('click', () => {
+  mtReps++;
+  const display = document.getElementById('mtRepCount');
+  display.textContent = mtReps;
+  display.style.transform = 'scale(1.08)';
+  setTimeout(() => display.style.transform = 'scale(1)', 120);
+});
+
+document.getElementById('mtUndoBtn').addEventListener('click', () => {
+  if (mtReps > 0) { mtReps--; document.getElementById('mtRepCount').textContent = mtReps; }
+});
+
+document.getElementById('mtFinishBtn').addEventListener('click', () => {
+  if (mtReps === 0) return;
+  document.querySelectorAll('.mt-step').forEach(s => s.classList.remove('active'));
+  document.getElementById('mtResult').classList.add('active');
+  document.getElementById('mtResultReps').textContent = mtReps;
+  document.getElementById('mtResultLabel').textContent = mtExercise === 'pullup' ? 'pull-up reps' : 'push-up reps';
+
+  const newTier = tierFromMax(mtExercise, mtReps);
+  const oldTier = getTier(mtExercise);
+  const promoted = oldTier && getTierIndex(newTier) > getTierIndex(oldTier);
+
+  const promoDiv = document.getElementById('mtPromotion');
+  if (promoted) {
+    promoDiv.innerHTML = `<div class="mt-promotion"><h3>Tier Up!</h3><p>You've advanced from <strong>${oldTier}</strong> to <strong>${newTier}</strong>! New exercises unlocked.</p></div>`;
+  } else {
+    promoDiv.innerHTML = `<div style="padding:var(--space-2);font-size:var(--text-sm);color:var(--color-text-muted)">Current tier: <span class="tier-badge ${newTier}">${newTier}</span></div>`;
+  }
+
+  // Update tier state
+  setTierForExercise(mtExercise, newTier, mtReps, true);
+});
+
+document.getElementById('mtDoneBtn').addEventListener('click', () => {
+  closeMaxTest();
+  setExercise(state.exercise);
+  renderTierProgressCard();
+  renderTierSettings();
+});
+
+// ─── Auto-Detection After finishSet ───
+const origFinishSetBtn = document.getElementById('finishSet');
+const newFinishSetBtn = origFinishSetBtn.cloneNode(true);
+origFinishSetBtn.parentNode.replaceChild(newFinishSetBtn, origFinishSetBtn);
+newFinishSetBtn.addEventListener('click', () => {
+  // Handle timed exercises
+  if (isTimedExercise()) {
+    stopTimedExercise();
+  }
+  if (state.currentReps === 0) return;
+  const setData = { reps: state.currentReps, exercise: state.exercise, variant: state.variant };
+  if (state.variant === 'weighted') setData.weight = state.currentWeight;
+  const repsJustDone = state.currentReps;
+  const exerciseJustDone = state.exercise;
+  state.sets.push(setData);
+  state.currentReps = 0; state.setNumber++;
+  const repDisplay = document.getElementById('repCount');
+  if (isTimedExercise()) {
+    repDisplay.textContent = '0:00';
+    timedSeconds = 0;
+  } else {
+    repDisplay.textContent = '0';
+  }
+  document.getElementById('setInfo').textContent = 'Set ' + state.setNumber;
+  renderCurrentSets();
+  if (state.restSeconds > 0) startRest();
+
+  // Auto-detection: check if reps exceed current tier threshold
+  checkAutoDetection(exerciseJustDone, repsJustDone);
+});
+
+let autodetectPendingExercise = null;
+let autodetectPendingReps = 0;
+
+function checkAutoDetection(exercise, reps) {
+  if (!state.tiers || !state.tiers.assessed) return;
+  const tierData = state.tiers[exercise];
+  if (!tierData || !tierData.tier) return;
+
+  const currentMax = TIER_MAX_FOR_LEVEL[exercise][tierData.tier];
+  // If reps exceed the current tier's max threshold, prompt
+  if (reps > currentMax && currentMax !== Infinity) {
+    autodetectPendingExercise = exercise;
+    autodetectPendingReps = reps;
+    document.getElementById('autodetectBanner').classList.add('visible');
+  }
+}
+
+document.getElementById('autodetectYes').addEventListener('click', () => {
+  document.getElementById('autodetectBanner').classList.remove('visible');
+  if (autodetectPendingExercise) {
+    const newTier = tierFromMax(autodetectPendingExercise, autodetectPendingReps);
+    setTierForExercise(autodetectPendingExercise, newTier, autodetectPendingReps, true);
+    setExercise(state.exercise);
+    showToast('New max recorded! Tier updated to ' + newTier + '.');
+    renderTierProgressCard();
+    renderTierSettings();
+  }
+});
+
+document.getElementById('autodetectNo').addEventListener('click', () => {
+  document.getElementById('autodetectBanner').classList.remove('visible');
+});
+
+// ─── Weekly Retest Nudge ───
+function checkRetestNudge() {
+  if (!state.tiers || !state.tiers.assessed) return;
+  const nudge = document.getElementById('retestNudge');
+  const now = new Date();
+  let showNudge = false;
+
+  ['pullup', 'pushup'].forEach(ex => {
+    const lastTest = state.tiers[ex].lastTestDate;
+    if (!lastTest) { showNudge = true; return; }
+    const testDate = new Date(lastTest + 'T12:00:00');
+    const daysSince = Math.floor((now - testDate) / (1000 * 60 * 60 * 24));
+    if (daysSince >= 14) showNudge = true;
+  });
+
+  // Check if user dismissed it today
+  const dismissKey = 'repcounter_retest_dismiss_' + toLocalDateKey(now);
+  if (localStorage.getItem(dismissKey)) showNudge = false;
+
+  if (showNudge) {
+    nudge.classList.add('visible');
+  } else {
+    nudge.classList.remove('visible');
+  }
+}
+
+document.getElementById('retestNudgeAction').addEventListener('click', () => {
+  document.getElementById('retestNudge').classList.remove('visible');
+  startMaxTest('pullup');
+});
+
+document.getElementById('retestNudgeDismiss').addEventListener('click', () => {
+  document.getElementById('retestNudge').classList.remove('visible');
+  const dismissKey = 'repcounter_retest_dismiss_' + toLocalDateKey(new Date());
+  localStorage.setItem(dismissKey, '1');
+});
+
+// ─── Tier Settings ───
+function renderTierSettings() {
+  const section = document.getElementById('tierSettingsSection');
+  if (!state.tiers || !state.tiers.assessed) {
+    section.innerHTML = '';
+    return;
+  }
+
+  function segmented(exercise) {
+    const current = getTier(exercise);
+    return TIER_ORDER.map(t => {
+      const active = t === current ? ' active' : '';
+      return `<button class="tier-seg-btn${active}" data-tier="${t}" data-exercise="${exercise}">${t}</button>`;
+    }).join('');
+  }
+
+  section.innerHTML = `
+    <div class="section-label">Tier</div>
+    <div class="setting-row" style="flex-direction:column;align-items:stretch;gap:var(--space-2)">
+      <span class="setting-label">Pull-up tier</span>
+      <div class="tier-segmented" id="tierSegPull">${segmented('pullup')}</div>
+    </div>
+    <div class="setting-row" style="flex-direction:column;align-items:stretch;gap:var(--space-2)">
+      <span class="setting-label">Push-up tier</span>
+      <div class="tier-segmented" id="tierSegPush">${segmented('pushup')}</div>
+    </div>
+    <div style="text-align:center">
+      <button class="retake-link" id="retakeAssessmentBtn">Retake assessment</button>
+    </div>`;
+
+  // Bind click handlers
+  section.querySelectorAll('.tier-seg-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const exercise = btn.dataset.exercise;
+      const tier = btn.dataset.tier;
+      setTierForExercise(exercise, tier, state.tiers[exercise].max, false);
+      setExercise(state.exercise);
+      renderTierSettings();
+      renderTierProgressCard();
+    });
+  });
+
+  const retakeBtn = document.getElementById('retakeAssessmentBtn');
+  if (retakeBtn) {
+    retakeBtn.addEventListener('click', () => {
+      state.tiers = getDefaultTierState();
+      saveTierState();
+      renderTierSettings();
+      showOnboarding();
+    });
+  }
+}
+
+// ─── GTG Tips By Tier ───
+const GTG_TIPS = {
+  beginner: [
+    'Focus on form over reps — quality builds strength faster.',
+    'Rest at least 15 minutes between sets for best results.',
+    'Grease the Groove works by practicing often, not going to failure.',
+    'Start with just 2–3 sets per day and build up gradually.',
+    'Negatives (eccentrics) are your secret weapon for getting stronger.',
+    'Consistency beats intensity — a few reps daily outperforms one big session.',
+    'Keep your shoulders packed and engaged during every rep.',
+    'Breathe! Exhale during the hard part, inhale during the easy part.',
+    'Track your progress — even small gains add up fast.',
+    'Your body adapts between sessions, not during them. Rest matters.'
+  ],
+  intermediate: [
+    'Aim for about 50% of your max per set — never go to failure.',
+    'Spread 5–8 sets throughout the day for optimal GTG results.',
+    'Try different grip variations to build well-rounded strength.',
+    'Slow down your reps to build more control and muscle.',
+    'Pair pull-ups and push-ups for balanced upper body development.',
+    'Weighted variants are great for breaking through plateaus.',
+    'Grease the Groove is neurological training — you\'re teaching your muscles.',
+    'Every rep should look identical — consistency is skill practice.',
+    'Schedule your sets around daily activities (after coffee, before lunch, etc).',
+    'Retest your max every 2–3 weeks to track progress.'
+  ],
+  advanced: [
+    'Mix heavy low-rep sets with lighter high-rep sets for balanced gains.',
+    'Add weight gradually — 5 lbs every 2–3 weeks is sustainable.',
+    'Tempo variations (slow eccentrics) break plateaus effectively.',
+    'Your GTG target should be about 50% of your current max.',
+    'Consider dedicated grip training to support heavier pull-ups.',
+    'Wide and close grip variations target different parts of the lats.',
+    'Pike push-ups bridge the gap to handstand push-ups.',
+    'Deficit push-ups increase range of motion for better chest activation.',
+    'Film yourself occasionally to check form drift.',
+    'Recovery matters more at higher intensities — don\'t overtrain.'
+  ],
+  hardcore: [
+    'You\'re in the top tier — focus on skill moves and weighted progression.',
+    'L-sit and typewriter pull-ups build insane core and lateral strength.',
+    'One-arm progressions need patience — archer variants are the bridge.',
+    'Planche leans build the anterior deltoid strength for full planche.',
+    'Weighted pull-ups at 50%+ bodyweight is elite-level strength.',
+    'Handstand push-ups require both strength and balance — practice both.',
+    'Towel pull-ups will expose any grip weakness immediately.',
+    'Mix skill work (typewriters, archers) with heavy work (weighted) each week.',
+    'At your level, deload weeks every 4–6 weeks prevent overuse injuries.',
+    'The journey doesn\'t end — there\'s always a harder variation to master.'
+  ]
+};
+
+function showGtgTip() {
+  const tipEl = document.getElementById('gtgTip');
+  if (!tipEl) return;
+  const tier = getTier(state.exercise) || 'beginner';
+  const tips = GTG_TIPS[tier] || GTG_TIPS.beginner;
+  const tip = tips[Math.floor(Math.random() * tips.length)];
+  tipEl.textContent = tip;
+}
+
+// ─── Init Tier System ───
+(function initTierSystem() {
+  // If no tier data and no workout history, show onboarding after app shell is visible
+  const checkAndShowOnboarding = () => {
+    if (!state.tiers || !state.tiers.assessed) {
+      // Check if user has workout history (if so, don't force assessment)
+      if (state.history.length === 0) {
+        // Delay slightly to let app shell render
+        setTimeout(() => {
+          if (document.getElementById('appShell').classList.contains('visible')) {
+            showOnboarding();
+          }
+        }, 500);
+      } else {
+        // User has history but no tier: infer from data
+        inferTiersFromHistory();
+      }
+    }
+    // Render tier-dependent UI
+    renderTierProgressCard();
+    renderTierSettings();
+    checkRetestNudge();
+    showGtgTip();
+    // Apply tier filtering to current exercise
+    if (state.tiers && state.tiers.assessed) {
+      setExercise(state.exercise);
+    }
+  };
+
+  // Observe appShell visibility
+  const observer = new MutationObserver(() => {
+    if (document.getElementById('appShell').classList.contains('visible')) {
+      observer.disconnect();
+      setTimeout(checkAndShowOnboarding, 300);
+    }
+  });
+  observer.observe(document.getElementById('appShell'), { attributes: true, attributeFilter: ['class'] });
+
+  // Also check immediately if already visible
+  if (document.getElementById('appShell').classList.contains('visible')) {
+    observer.disconnect();
+    setTimeout(checkAndShowOnboarding, 300);
+  }
+})();
+
+function inferTiersFromHistory() {
+  // Infer tiers from existing workout data
+  let maxPull = 0, maxPush = 0;
+  state.history.forEach(w => {
+    const sets = Array.isArray(w.sets) ? w.sets : (typeof w.sets === 'string' ? JSON.parse(w.sets) : []);
+    sets.forEach(s => {
+      if (s.exercise === 'pullup' && s.reps > maxPull) maxPull = s.reps;
+      if (s.exercise === 'pushup' && s.reps > maxPush) maxPush = s.reps;
+    });
+  });
+  const pullTier = tierFromMax('pullup', maxPull);
+  const pushTier = tierFromMax('pushup', maxPush);
+  state.tiers = {
+    pullup: { tier: pullTier, max: maxPull, lastTestDate: null },
+    pushup: { tier: pushTier, max: maxPush, lastTestDate: null },
+    assessed: true
+  };
+  saveTierState();
+}
+
+// Update stats tab to render tier card
+const _origNavHandler = null;
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    if (item.dataset.nav === 'stats') { renderTierProgressCard(); }
+    if (item.dataset.nav === 'settings') { renderTierSettings(); }
+    if (item.dataset.nav === 'workout') { checkRetestNudge(); showGtgTip(); }
+  });
+});
+
 </script>
 </body>
 </html>
