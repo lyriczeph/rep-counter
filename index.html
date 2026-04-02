@@ -2165,10 +2165,20 @@ function renderDailyBriefing() {
     const sets = Array.isArray(w.sets) ? w.sets : (typeof w.sets === 'string' ? JSON.parse(w.sets) : []);
     sets.forEach(s => { if (s.exercise === 'pullup') debugPullSets++; else debugPushSets++; });
   });
-  const debugHtml = `<div style="font-size:0.6rem;color:var(--color-text-faint);margin-top:var(--space-2);font-family:monospace">
+  // Detailed set dump
+  let setDump = '';
+  todayWorkouts.forEach((w, wi) => {
+    const sets = Array.isArray(w.sets) ? w.sets : (typeof w.sets === 'string' ? JSON.parse(w.sets) : []);
+    const time = new Date(w.date).toLocaleTimeString('en-US', {hour:'numeric',minute:'2-digit'});
+    setDump += `w${wi}(${time}) pT=${w.pullTotal} uT=${w.pushTotal} sets=${sets.length}: `;
+    sets.forEach(s => { setDump += `[${s.exercise}/${s.variant}:${s.reps}] `; });
+    setDump += '<br>';
+  });
+  const debugHtml = `<div style="font-size:0.55rem;color:var(--color-text-faint);margin-top:var(--space-2);font-family:monospace;line-height:1.4;word-break:break-all">
     today=${todayKey} | workouts=${todayWorkouts.length} | history=${state.history.length}<br>
     saved: pull=${debugPullSets} push=${debugPushSets} | unsaved: ${(state.sets||[]).length}<br>
-    getTodayProgress: pull=${prog.pullSets} push=${prog.pushSets}
+    getTodayProgress: pull=${prog.pullSets} push=${prog.pushSets}<br>
+    ---<br>${setDump}
   </div>`;
 
   el.innerHTML = `<div class="briefing-card"><div class="briefing-heading">${heading}</div><div class="briefing-body">${body}${btn}</div>${debugHtml}</div>`;
