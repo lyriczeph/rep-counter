@@ -396,6 +396,22 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
   font-weight: 500; color: var(--color-error); background: var(--color-surface); }
 .danger-btn:hover { background: var(--color-surface-offset); }
 
+/* Achievement detail overlay */
+.achievement-detail-overlay { position: fixed; inset: 0; background: oklch(from var(--color-bg) l c h / 0.92); display: none;
+  place-items: center; z-index: 150; backdrop-filter: blur(8px); padding: var(--space-4); }
+.achievement-detail-overlay.visible { display: grid; }
+.achievement-detail-card { background: var(--color-surface); border-radius: var(--radius-xl); padding: var(--space-8) var(--space-6);
+  width: 100%; max-width: 320px; box-shadow: var(--shadow-md); text-align: center; }
+.achievement-detail-emoji { font-size: 4rem; line-height: 1; margin-bottom: var(--space-3); }
+.achievement-detail-name { font-size: var(--text-lg); font-weight: 700; margin-bottom: var(--space-2); }
+.achievement-detail-animal { font-size: var(--text-sm); font-weight: 600; color: var(--color-text-muted); margin-bottom: var(--space-2); }
+.achievement-detail-tagline { font-size: var(--text-sm); font-style: italic; color: var(--color-text-muted); line-height: 1.5; margin-bottom: var(--space-3); }
+.achievement-detail-date { font-size: var(--text-xs); color: var(--color-text-faint); }
+.achievement-detail-condition { font-size: var(--text-sm); color: var(--color-text-muted); margin-top: var(--space-2); }
+.achievement-detail-card.unlocked .achievement-detail-name { color: var(--color-primary); }
+.achievement-detail-card.locked .achievement-detail-emoji { filter: grayscale(1); opacity: 0.3; }
+.achievement-detail-card.locked .achievement-detail-name { color: var(--color-text-muted); }
+
 /* Toggle switch */
 .toggle { position: relative; display: inline-block; width: 48px; height: 28px; flex-shrink: 0; }
 .toggle input { opacity: 0; width: 0; height: 0; }
@@ -473,6 +489,8 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
 .trophy-item.unlocked.push-glow { box-shadow: inset 0 0 0 1px oklch(from var(--color-secondary) l c h / 0.2), 0 0 12px oklch(from var(--color-secondary) l c h / 0.1); }
 .trophy-item.unlocked.streak-glow { box-shadow: inset 0 0 0 1px oklch(from var(--color-success) l c h / 0.2), 0 0 12px oklch(from var(--color-success) l c h / 0.1); }
 .trophy-item.unlocked.special-glow { box-shadow: inset 0 0 0 1px oklch(from var(--color-orange) l c h / 0.2), 0 0 12px oklch(from var(--color-orange) l c h / 0.1); }
+.trophy-item { cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform 120ms ease; }
+.trophy-item:active { transform: scale(0.95); }
 .trophy-item.locked { opacity: 0.5; background: var(--color-surface-offset); }
 .trophy-emoji { font-size: 1.75rem; line-height: 1.2; }
 .trophy-name { font-size: 0.65rem; font-weight: 700; line-height: 1.2; }
@@ -562,12 +580,12 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
   <div class="panel" id="panel-stats">
     <!-- Leaderboard section -->
     <div id="leaderboardSection"></div>
-    <!-- Trophies section -->
-    <div id="trophiesSection"></div>
     <div class="chart-card">
       <h3>Today’s Sets</h3>
       <div id="dailyBubbleTimeline"></div>
     </div>
+    <!-- Trophies section -->
+    <div id="trophiesSection"></div>
     <div class="chart-card">
       <h3>30-Day Volume</h3>
       <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
@@ -671,6 +689,17 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
     Settings
   </button>
 </nav>
+
+<!-- Achievement detail overlay -->
+<div class="achievement-detail-overlay" id="achievementDetailOverlay">
+  <div class="achievement-detail-card" id="achievementDetailCard">
+    <div class="achievement-detail-emoji" id="achievementDetailEmoji"></div>
+    <div class="achievement-detail-name" id="achievementDetailName"></div>
+    <div class="achievement-detail-animal" id="achievementDetailAnimal"></div>
+    <div class="achievement-detail-tagline" id="achievementDetailTagline"></div>
+    <div class="achievement-detail-date" id="achievementDetailDate"></div>
+  </div>
+</div>
 
 <!-- Exercise info overlay -->
 <div class="exercise-info-overlay" id="exerciseInfoOverlay">
@@ -1057,14 +1086,14 @@ function renderTrophies() {
   let gridHtml = sorted.map(ach => {
     const isUnlocked = achState[ach.id] && achState[ach.id].unlocked;
     if (isUnlocked) {
-      return `<div class="trophy-item unlocked ${glowClass(ach)}">
+      return `<div class="trophy-item unlocked ${glowClass(ach)}" data-ach-id="${ach.id}">
         <div class="trophy-emoji">${ach.emoji}</div>
         <div class="trophy-name">${ach.name}</div>
         <div class="trophy-tagline">${ach.tagline}</div>
         <div class="trophy-date">${formatDate(achState[ach.id].date)}</div>
       </div>`;
     } else {
-      return `<div class="trophy-item locked">
+      return `<div class="trophy-item locked" data-ach-id="${ach.id}">
         <div class="trophy-emoji">❓</div>
         <div class="trophy-name">???</div>
         <div class="trophy-condition">${ach.condition}</div>
@@ -1076,7 +1105,50 @@ function renderTrophies() {
     <h3>Trophies <span class="trophy-count">${unlockedCount} / ${totalCount}</span></h3>
     <div class="trophy-grid">${gridHtml}</div>
   </div>`;
+
+  // Add click handlers to trophy items
+  section.querySelectorAll('.trophy-item').forEach(item => {
+    item.style.cursor = 'pointer';
+    item.addEventListener('click', () => showAchievementDetail(item.dataset.achId));
+  });
 }
+
+// ─── Achievement Detail Overlay ───
+function showAchievementDetail(achId) {
+  const ach = ACHIEVEMENTS[achId];
+  if (!ach) return;
+  const achState = loadAchievementState();
+  const isUnlocked = achState[achId] && achState[achId].unlocked;
+  const overlay = document.getElementById('achievementDetailOverlay');
+  const card = document.getElementById('achievementDetailCard');
+
+  card.className = 'achievement-detail-card ' + (isUnlocked ? 'unlocked' : 'locked');
+
+  if (isUnlocked) {
+    document.getElementById('achievementDetailEmoji').textContent = ach.emoji;
+    document.getElementById('achievementDetailName').textContent = ach.name;
+    document.getElementById('achievementDetailAnimal').textContent = ach.animal;
+    document.getElementById('achievementDetailTagline').textContent = ach.tagline;
+    const d = achState[achId].date ? new Date(achState[achId].date + 'T12:00:00') : null;
+    document.getElementById('achievementDetailDate').textContent = d
+      ? 'Unlocked ' + d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      : '';
+  } else {
+    document.getElementById('achievementDetailEmoji').textContent = '❓';
+    document.getElementById('achievementDetailName').textContent = ach.name;
+    document.getElementById('achievementDetailAnimal').textContent = '';
+    document.getElementById('achievementDetailTagline').textContent = ach.condition;
+    document.getElementById('achievementDetailDate').textContent = '';
+  }
+
+  overlay.classList.add('visible');
+}
+
+document.getElementById('achievementDetailOverlay').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget || e.target.closest('.achievement-detail-card')) {
+    document.getElementById('achievementDetailOverlay').classList.remove('visible');
+  }
+});
 
 // ─── Auth Functions ───
 async function handleAuthChange(event, session) {
