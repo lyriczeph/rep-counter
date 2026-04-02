@@ -1805,6 +1805,39 @@ let historyFilter = 'all';
 const DAILY_SCHEDULE = ['medium','heavy','light','heavy','medium','light','rest']; // Mon–Sun
 const SET_COUNTS = { rest: 0, light: 4, medium: 6, heavy: 8 };
 const TIER_EST_MAX = { beginner: 3, intermediate: 7, advanced: 15, hardcore: 25 };
+const TIER_MIN_REPS = { beginner: 1, intermediate: 2, advanced: 3, hardcore: 5 };
+
+// Three-signal max estimation: formal test > tier estimate > recent history
+function getEffectiveMax(exercise) {
+  const tiers = state.tiers || {};
+  const tierData = tiers[exercise] || {};
+  const tier = tierData.tier || 'beginner';
+
+  // Signal 1: Formal max test (discounted if stale > 30 days)
+  let testMax = 0;
+  if (tierData.max > 0) {
+    const daysSinceTest = tierData.lastTestDate
+      ? Math.floor((Date.now() - new Date(tierData.lastTestDate + 'T12:00:00').getTime()) / 86400000)
+      : 999;
+    testMax = daysSinceTest <= 30 ? tierData.max : Math.floor(tierData.max * 0.9);
+  }
+
+  // Signal 2: Tier estimate (floor — never recommend less than your tier implies)
+  const tierMax = TIER_EST_MAX[tier] || 3;
+
+  // Signal 3: Best single set in last 14 days
+  let bestRecent = 0;
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 14);
+  state.history.forEach(w => {
+    if (new Date(w.date) < cutoff) return;
+    const sets = Array.isArray(w.sets) ? w.sets : (typeof w.sets === 'string' ? JSON.parse(w.sets) : []);
+    sets.forEach(s => {
+      if (s.exercise === exercise && s.reps > bestRecent) bestRecent = s.reps;
+    });
+  });
+
+  return Math.max(testMax, tierMax, bestRecent);
+}
 
 const TRAINING_BLOCKS = {
   beginner: {
@@ -1863,22 +1896,9 @@ function generatePlan() {
   const tiers = state.tiers || {};
   const pullTier = (tiers.pullup && tiers.pullup.tier) || 'beginner';
   const pushTier = (tiers.pushup && tiers.pushup.tier) || 'beginner';
-  // Use tier max if available, otherwise scan history for best set, otherwise estimate from tier
-  let pullMax = (tiers.pullup && tiers.pullup.max > 0) ? tiers.pullup.max : 0;
-  let pushMax = (tiers.pushup && tiers.pushup.max > 0) ? tiers.pushup.max : 0;
-  // If no tier max, scan workout history for actual best set
-  if (pullMax === 0 || pushMax === 0) {
-    state.history.forEach(w => {
-      const sets = Array.isArray(w.sets) ? w.sets : (typeof w.sets === 'string' ? JSON.parse(w.sets) : []);
-      sets.forEach(s => {
-        if (s.exercise === 'pullup' && s.reps > pullMax) pullMax = s.reps;
-        if (s.exercise === 'pushup' && s.reps > pushMax) pushMax = s.reps;
-      });
-    });
-  }
-  // Final fallback to tier estimate
-  if (pullMax === 0) pullMax = TIER_EST_MAX[pullTier];
-  if (pushMax === 0) pushMax = TIER_EST_MAX[pushTier];
+  // Three-signal effective max (formal test, tier estimate, recent performance)
+  const pullMax = getEffectiveMax('pullup');
+  const pushMax = getEffectiveMax('pushup');
   const isBeginner = pullTier === 'beginner' || pushTier === 'beginner';
 
   // Determine block tier and current phase
@@ -1908,8 +1928,10 @@ function generatePlan() {
   const phaseSchedule = phase.schedule || DAILY_SCHEDULE;
   const repFactor = phase.repFactor || 0.5;
 
-  const pullRPS = Math.max(1, Math.floor(pullMax * repFactor));
-  const pushRPS = Math.max(1, Math.floor(pushMax * repFactor));
+  const pullMinReps = TIER_MIN_REPS[pullTier] || 1;
+  const pushMinReps = TIER_MIN_REPS[pushTier] || 1;
+  const pullRPS = Math.max(pullMinReps, Math.floor(pullMax * repFactor));
+  const pushRPS = Math.max(pushMinReps, Math.floor(pushMax * repFactor));
 
   const schedule = phaseSchedule.map(day => {
     let sets = SET_COUNTS[day];
@@ -1923,6 +1945,7 @@ function generatePlan() {
 
   state.plan = {
     repsPerSet: { pullup: pullRPS, pushup: pushRPS },
+    effectiveMax: { pullup: pullMax, pushup: pushMax },
     setsPerDay: { pullup: schedule[0].pullSets, pushup: schedule[0].pushSets },
     schedule: schedule,
     block: blockState
@@ -4041,7 +4064,11 @@ function updateNextSetCard() {
     }
   }
   if (!metaText) {
-    metaText = prog.pullSets + '/' + sched.pullSets + ' pull-up sets · ' + prog.pushSets + '/' + sched.pushSets + ' push-up sets';
+    const plan = state.plan || {};
+    const eMax = (plan.effectiveMax && plan.effectiveMax[next.exercise]) || 0;
+    const eReps = (plan.repsPerSet && plan.repsPerSet[next.exercise]) || 0;
+    const whyText = eMax > 0 ? ` · ${eReps} reps = ${Math.round((eReps/eMax)*100)}% of ${eMax}-rep max` : '';
+    metaText = prog.pullSets + '/' + sched.pullSets + ' pull-up sets · ' + prog.pushSets + '/' + sched.pushSets + ' push-up sets' + whyText;
   }
   metaEl.innerHTML = metaText;
 
