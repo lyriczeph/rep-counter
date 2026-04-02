@@ -399,6 +399,34 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
 /* Coach sections */
 .coach-section { margin-bottom: var(--space-6); }
 
+/* Today's progress card (Count tab) */
+.today-progress-card { background: var(--color-surface); border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4); margin-bottom: var(--space-4); box-shadow: var(--shadow-sm); }
+.today-progress-text { font-size: var(--text-sm); color: var(--color-text-muted); font-weight: 500;
+  display: flex; justify-content: center; gap: var(--space-3); flex-wrap: wrap; margin-bottom: var(--space-2); }
+.today-progress-text .pull { color: var(--color-primary); font-weight: 700; }
+.today-progress-text .push { color: var(--color-secondary); font-weight: 700; }
+.today-progress-bar { height: 6px; background: var(--color-surface-offset); border-radius: var(--radius-full);
+  overflow: hidden; display: flex; }
+.today-progress-bar .bar-pull { background: var(--color-primary); transition: width 300ms ease; }
+.today-progress-bar .bar-push { background: var(--color-secondary); transition: width 300ms ease; }
+
+/* Suggested reps */
+.suggested-reps { font-size: var(--text-sm); color: var(--color-text-faint); font-weight: 500;
+  text-align: center; margin-bottom: var(--space-1); transition: color 300ms ease; }
+.suggested-reps.hit { color: var(--color-success); animation: suggestPulse 300ms ease; }
+@keyframes suggestPulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+/* Briefing card */
+.briefing-card { background: var(--color-surface); border-radius: var(--radius-lg);
+  padding: var(--space-4); box-shadow: var(--shadow-sm); }
+.briefing-heading { font-size: var(--text-base); font-weight: 700; margin-bottom: var(--space-2); }
+.briefing-body { font-size: var(--text-sm); color: var(--color-text-muted); line-height: 1.6; }
+.briefing-plan { font-size: var(--text-sm); font-weight: 600; margin-bottom: var(--space-2); }
+.briefing-btn { display: inline-block; margin-top: var(--space-3); padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full); background: var(--color-primary); color: var(--color-text-inverse);
+  font-size: var(--text-sm); font-weight: 600; min-height: 44px; min-width: 44px; }
+
 /* History overlay */
 .history-overlay { position: fixed; inset: 0; background: oklch(from var(--color-bg) l c h / 0.96);
   backdrop-filter: blur(8px); z-index: 100; display: none; flex-direction: column;
@@ -700,6 +728,13 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
       <button class="rn-action" id="retestNudgeAction">Test Now</button>
       <button class="rn-dismiss" id="retestNudgeDismiss">×</button>
     </div>
+    <div class="today-progress-card" id="todayProgressCard">
+      <div class="today-progress-text" id="todayProgressText"></div>
+      <div class="today-progress-bar" id="todayProgressBar">
+        <div class="bar-pull" style="width:0%"></div>
+        <div class="bar-push" style="width:0%"></div>
+      </div>
+    </div>
     <div class="exercise-picker">
       <button class="exercise-tab active" data-ex="pullup"><span class="ex-dot pullup"></span> Pull-Ups</button>
       <button class="exercise-tab" data-ex="pushup"><span class="ex-dot pushup"></span> Push-Ups</button>
@@ -720,6 +755,7 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
     </div>
     <div class="counter-section">
       <div class="set-info" id="setInfo">Set 1</div>
+      <div class="suggested-reps" id="suggestedReps"></div>
       <div class="count-display pullup" id="repCount">0</div>
       <button class="counter-btn pullup" id="addRep" aria-label="Add rep">TAP</button>
       <div class="counter-actions">
@@ -1660,9 +1696,161 @@ let historyFilter = 'all';
   });
 })();
 
+// ─── Daily Plan Engine ───
+const DAILY_SCHEDULE = ['medium','heavy','light','heavy','medium','light','rest']; // Mon–Sun
+const SET_COUNTS = { rest: 0, light: 4, medium: 6, heavy: 8 };
+const TIER_EST_MAX = { beginner: 3, intermediate: 7, advanced: 15, hardcore: 25 };
+
+function generatePlan() {
+  const tiers = state.tiers || {};
+  const pullTier = (tiers.pullup && tiers.pullup.tier) || 'beginner';
+  const pushTier = (tiers.pushup && tiers.pushup.tier) || 'beginner';
+  const pullMax = (tiers.pullup && tiers.pullup.max > 0) ? tiers.pullup.max : TIER_EST_MAX[pullTier];
+  const pushMax = (tiers.pushup && tiers.pushup.max > 0) ? tiers.pushup.max : TIER_EST_MAX[pushTier];
+  const pullRPS = Math.max(1, Math.floor(pullMax * 0.5));
+  const pushRPS = Math.max(1, Math.floor(pushMax * 0.5));
+  const isBeginner = pullTier === 'beginner' || pushTier === 'beginner';
+
+  const schedule = DAILY_SCHEDULE.map(day => {
+    let sets = SET_COUNTS[day];
+    if (isBeginner && day !== 'rest') sets = Math.max(2, sets - 2);
+    return { day, pullSets: day === 'rest' ? 0 : sets, pushSets: day === 'rest' ? 0 : sets };
+  });
+
+  state.plan = {
+    repsPerSet: { pullup: pullRPS, pushup: pushRPS },
+    setsPerDay: { pullup: schedule[0].pullSets, pushup: schedule[0].pushSets },
+    schedule: schedule
+  };
+  try { localStorage.setItem('repcounter-plan', JSON.stringify(state.plan)); } catch(e) {}
+  return state.plan;
+}
+
+function loadPlan() {
+  try {
+    const saved = localStorage.getItem('repcounter-plan');
+    if (saved) { state.plan = JSON.parse(saved); return state.plan; }
+  } catch(e) {}
+  return generatePlan();
+}
+
+function getTodaySchedule() {
+  const plan = state.plan || loadPlan();
+  const dow = (new Date().getDay() + 6) % 7; // Mon=0 ... Sun=6
+  return plan.schedule[dow] || { day: 'medium', pullSets: 6, pushSets: 6 };
+}
+
+function getTomorrowSchedule() {
+  const plan = state.plan || loadPlan();
+  const dow = ((new Date().getDay() + 6) % 7 + 1) % 7;
+  return plan.schedule[dow] || { day: 'medium', pullSets: 6, pushSets: 6 };
+}
+
+// ─── Today's Progress ───
+function getTodayProgress() {
+  const todayKey = toLocalDateKey(new Date());
+  let pullSets = 0, pushSets = 0, pullReps = 0, pushReps = 0;
+  // From saved workouts
+  state.history.filter(w => toLocalDateKey(w.date) === todayKey).forEach(w => {
+    const sets = Array.isArray(w.sets) ? w.sets : (typeof w.sets === 'string' ? JSON.parse(w.sets) : []);
+    sets.forEach(s => {
+      if (s.exercise === 'pullup') { pullSets++; pullReps += s.reps; }
+      else { pushSets++; pushReps += s.reps; }
+    });
+  });
+  // From current unsaved session
+  (state.sets || []).forEach(s => {
+    if (s.exercise === 'pullup') { pullSets++; pullReps += s.reps; }
+    else { pushSets++; pushReps += s.reps; }
+  });
+  return { pullSets, pushSets, pullReps, pushReps };
+}
+
+function renderTodayProgressCard() {
+  const sched = getTodaySchedule();
+  const prog = getTodayProgress();
+  const plan = state.plan || loadPlan();
+  const targetPull = sched.pullSets;
+  const targetPush = sched.pushSets;
+  const totalTarget = targetPull + targetPush;
+  const totalDone = prog.pullSets + prog.pushSets;
+
+  const textEl = document.getElementById('todayProgressText');
+  const barEl = document.getElementById('todayProgressBar');
+  if (!textEl || !barEl) return;
+
+  if (sched.day === 'rest') {
+    textEl.innerHTML = '🧘 Rest day — no sets planned';
+    barEl.querySelector('.bar-pull').style.width = '0%';
+    barEl.querySelector('.bar-push').style.width = '0%';
+    return;
+  }
+
+  textEl.innerHTML = `<span><span class="pull">${prog.pullSets}/${targetPull}</span> pull-ups</span><span><span class="push">${prog.pushSets}/${targetPush}</span> push-ups</span>`;
+
+  const pullPct = totalTarget > 0 ? (Math.min(prog.pullSets, targetPull) / totalTarget) * 100 : 0;
+  const pushPct = totalTarget > 0 ? (Math.min(prog.pushSets, targetPush) / totalTarget) * 100 : 0;
+  barEl.querySelector('.bar-pull').style.width = pullPct + '%';
+  barEl.querySelector('.bar-push').style.width = pushPct + '%';
+}
+
+function updateSuggestedReps() {
+  const el = document.getElementById('suggestedReps');
+  if (!el) return;
+  const plan = state.plan || loadPlan();
+  const target = plan.repsPerSet[state.exercise] || 0;
+  if (target > 0) {
+    el.textContent = target + ' reps';
+    // Check if current reps hit target
+    if (state.currentReps >= target && state.currentReps > 0) {
+      el.classList.add('hit');
+      setTimeout(() => el.classList.remove('hit'), 400);
+    } else {
+      el.classList.remove('hit');
+    }
+  } else {
+    el.textContent = '';
+  }
+}
+
+// ─── Daily Briefing (Coach tab) ───
+function renderDailyBriefing() {
+  const el = document.getElementById('coachBriefing');
+  if (!el) return;
+  const sched = getTodaySchedule();
+  const tomorrow = getTomorrowSchedule();
+  const prog = getTodayProgress();
+  const plan = state.plan || loadPlan();
+  const targetPull = sched.pullSets;
+  const targetPush = sched.pushSets;
+  const pullRPS = plan.repsPerSet.pullup || 1;
+  const pushRPS = plan.repsPerSet.pushup || 1;
+  const totalReps = prog.pullReps + prog.pushReps;
+
+  let heading, body, btn = '';
+
+  if (sched.day === 'rest') {
+    heading = '🧘 Recovery Day';
+    body = 'No sets planned. Your nervous system adapts during rest. Stretch, walk, come back stronger tomorrow.';
+  } else if (prog.pullSets === 0 && prog.pushSets === 0) {
+    heading = '☀️ Today\u2019s Plan';
+    body = `<div class="briefing-plan">${targetPull} sets of ${pullRPS} pull-ups · ${targetPush} sets of ${pushRPS} push-ups</div>Spread throughout the day. Stay fresh. Never go to failure.`;
+    btn = `<button class="briefing-btn" onclick="document.querySelector('[data-nav=workout]').click()">Start First Set →</button>`;
+  } else if (prog.pullSets < targetPull || prog.pushSets < targetPush) {
+    heading = '🔥 Keep Going';
+    body = `<div class="briefing-plan">${prog.pullSets}/${targetPull} pull-up sets · ${prog.pushSets}/${targetPush} push-up sets</div>${totalReps} reps so far today.`;
+    btn = `<button class="briefing-btn" onclick="document.querySelector('[data-nav=workout]').click()">Log a Set →</button>`;
+  } else {
+    heading = '✅ Nailed It';
+    body = `<div class="briefing-plan">${prog.pullSets} pull-up sets · ${prog.pushSets} push-up sets · ${totalReps} total reps</div>Rest up. Tomorrow is a <strong>${tomorrow.day}</strong> day.`;
+  }
+
+  el.innerHTML = `<div class="briefing-card"><div class="briefing-heading">${heading}</div><div class="briefing-body">${body}${btn}</div></div>`;
+}
+
 // ─── Navigation ───
 function renderCoachTab() {
-  // Shell for now — content will be added in Tasks 2–5
+  renderDailyBriefing();
 }
 
 document.querySelectorAll('.nav-item').forEach(item => {
@@ -1725,6 +1913,7 @@ function setExercise(ex) {
   document.querySelector('.rest-timer').style.color = ex === 'pullup' ? 'var(--color-primary)' : 'var(--color-secondary)';
   updateWeightVisibility();
   updateExerciseHero();
+  updateSuggestedReps();
 }
 
 document.querySelectorAll('.exercise-tab').forEach(btn => {
@@ -2002,6 +2191,7 @@ document.getElementById('addRep').addEventListener('click', () => {
   repDisplay.textContent = state.currentReps;
   repDisplay.style.transform = 'scale(1.08)';
   setTimeout(() => repDisplay.style.transform = 'scale(1)', 120);
+  updateSuggestedReps();
 });
 
 document.getElementById('undoRep').addEventListener('click', () => {
@@ -2017,6 +2207,8 @@ document.getElementById('finishSet').addEventListener('click', () => {
   repDisplay.textContent = '0';
   setInfo.textContent = 'Set ' + state.setNumber;
   renderCurrentSets();
+  renderTodayProgressCard();
+  updateSuggestedReps();
   if (state.restSeconds > 0) startRest();
 });
 
@@ -2063,6 +2255,8 @@ function saveWorkout() {
   renderCurrentSets(); saveState();
   saveWorkoutToCloud(workout);
   checkAchievements(true);
+  renderTodayProgressCard();
+  updateSuggestedReps();
 }
 
 // ─── Rest Timer ───
@@ -2725,6 +2919,11 @@ document.getElementById('exportData').addEventListener('click', () => {
 });
 
 renderCalendar();
+
+// ─── Plan + Progress Init ───
+loadPlan();
+renderTodayProgressCard();
+updateSuggestedReps();
 
 // ─── Auth Init ───
 (async function initAuth() {
