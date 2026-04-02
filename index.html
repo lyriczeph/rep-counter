@@ -2259,10 +2259,21 @@ function getWeekDates() {
 function getDayProgress(dateKey) {
   let pullSets = 0, pushSets = 0, pullReps = [], pushReps = [];
   state.history.filter(w => toLocalDateKey(w.date) === dateKey).forEach(w => {
-    parseSets(w.sets).forEach(s => {
-      if (s.exercise === 'pullup') { pullSets++; pullReps.push(s.reps || 0); }
-      else if (s.exercise === 'pushup') { pushSets++; pushReps.push(s.reps || 0); }
-    });
+    const sets = parseSets(w.sets);
+    const wPullSets = sets.filter(s => s.exercise === 'pullup');
+    const wPushSets = sets.filter(s => s.exercise === 'pushup');
+    // If sets array has data, use it for per-set reps
+    if (wPullSets.length > 0) {
+      wPullSets.forEach(s => { pullSets++; pullReps.push(s.reps || 0); });
+    } else if ((w.pullTotal || 0) > 0) {
+      // Fallback: sets array missing/empty but totals exist — treat as 1 set
+      pullSets++; pullReps.push(w.pullTotal);
+    }
+    if (wPushSets.length > 0) {
+      wPushSets.forEach(s => { pushSets++; pushReps.push(s.reps || 0); });
+    } else if ((w.pushTotal || 0) > 0) {
+      pushSets++; pushReps.push(w.pushTotal);
+    }
   });
   // Include current unsaved session for today
   const todayKey = toLocalDateKey(new Date());
@@ -2355,20 +2366,10 @@ function renderTrainingPlan() {
     detailHtml = '<div class="plan-today-detail" id="planTodayDetail"><div class="plan-today-header">🧘 Rest Day</div><div style="font-size:var(--text-sm);color:var(--color-text-muted)">No sets planned. Recover and come back tomorrow.</div></div>';
   } else {
     const prog = getTodayProgress();
-    // Also get individual set reps from today's history
-    const todayPullReps = [], todayPushReps = [];
-    state.history.filter(w => toLocalDateKey(w.date) === todayKey).forEach(w => {
-      const sets = Array.isArray(w.sets) ? w.sets : (typeof w.sets === 'string' ? JSON.parse(w.sets) : []);
-      sets.forEach(s => {
-        if (s.exercise === 'pullup') todayPullReps.push(s.reps);
-        else todayPushReps.push(s.reps);
-      });
-    });
-    // Include current unsaved sets
-    (state.sets || []).forEach(s => {
-      if (s.exercise === 'pullup') todayPullReps.push(s.reps);
-      else todayPushReps.push(s.reps);
-    });
+    // Get individual set reps from today's history using same logic as getDayProgress
+    const dayProg = getDayProgress(todayKey);
+    const todayPullReps = dayProg.pullReps;
+    const todayPushReps = dayProg.pushReps;
 
     const pullTarget = todaySched.pullSets;
     const pushTarget = todaySched.pushSets;
