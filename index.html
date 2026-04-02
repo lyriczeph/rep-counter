@@ -3748,7 +3748,7 @@ document.getElementById('exportData').addEventListener('click', () => {
 renderCalendar();
 
 // ─── Plan + Progress Init ───
-loadPlan();
+// Note: loadPlan() is deferred until after tier system initializes (see below)
 checkPlanAdvancement();
 setTimeout(() => updateNextSetCard(), 0);
 
@@ -4900,6 +4900,10 @@ function showGtgTip() {
     if (state.tiers && state.tiers.assessed) {
       setExercise(state.exercise);
     }
+    // Now that tiers are loaded, generate plan with correct max estimation
+    loadPlan();
+    checkPlanAdvancement();
+    setTimeout(() => updateNextSetCard(), 0);
   };
 
   // Observe appShell visibility
