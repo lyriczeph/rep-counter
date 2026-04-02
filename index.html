@@ -1762,7 +1762,7 @@ async function syncFromCloud() {
       }));
     }
     if (sRes.data) {
-      state.restSeconds = sRes.data.rest_seconds || 90;
+      state.restSeconds = sRes.data.rest_seconds || 5;
       state.targetPullups = sRes.data.target_pullups || 10;
       state.targetPushups = sRes.data.target_pushups || 20;
       document.getElementById('restTime').value = state.restSeconds;
@@ -1773,6 +1773,10 @@ async function syncFromCloud() {
     renderHistory();
     renderCalendar();
     if (document.getElementById('panel-stats').classList.contains('active')) { updateCharts(); renderLeaderboard(); renderTrophies(); }
+    if (document.getElementById('panel-coach').classList.contains('active')) { renderCoachTab(); }
+    // Refresh plan and next set card with fresh data
+    loadPlan();
+    if (typeof updateNextSetCard === 'function') setTimeout(() => updateNextSetCard(), 0);
     // Load achievements from cloud and retroactively check
     await loadAchievementsFromCloud();
     checkAchievements(false); // retroactive — no toasts
@@ -2250,6 +2254,14 @@ function getDayProgress(dateKey) {
       else { pushSets++; pushReps.push(s.reps); }
     });
   });
+  // Include current unsaved session for today
+  const todayKey = toLocalDateKey(new Date());
+  if (dateKey === todayKey && state.sets && state.sets.length > 0) {
+    state.sets.forEach(s => {
+      if (s.exercise === 'pullup') { pullSets++; pullReps.push(s.reps); }
+      else { pushSets++; pushReps.push(s.reps); }
+    });
+  }
   return { pullSets, pushSets, pullReps, pushReps };
 }
 
