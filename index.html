@@ -427,6 +427,22 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
   border-radius: var(--radius-full); background: var(--color-primary); color: var(--color-text-inverse);
   font-size: var(--text-sm); font-weight: 600; min-height: 44px; min-width: 44px; }
 
+/* Philosophy accordion */
+.philosophy-card { background: var(--color-surface); border-radius: var(--radius-md); margin-bottom: var(--space-2); overflow: hidden; }
+.philosophy-card-header { padding: var(--space-3) var(--space-4); font-size: var(--text-sm); font-weight: 600;
+  display: flex; justify-content: space-between; align-items: center; cursor: pointer;
+  min-height: 44px; -webkit-tap-highlight-color: transparent; }
+.philosophy-card-header:active { background: var(--color-surface-offset); }
+.philosophy-card-body { max-height: 0; overflow: hidden; transition: max-height 300ms ease; padding: 0 var(--space-4); }
+.philosophy-card.expanded .philosophy-card-body { max-height: 300px; padding: 0 var(--space-4) var(--space-4); }
+.philosophy-card-body p { font-size: var(--text-sm); color: var(--color-text-muted); line-height: 1.6; margin: 0; }
+.philosophy-chevron { font-size: var(--text-xs); color: var(--color-text-faint); transition: transform 200ms ease; }
+.philosophy-card.expanded .philosophy-chevron { transform: rotate(90deg); }
+
+/* Coach tier tip */
+.coach-tier-tip { text-align: center; padding: var(--space-3) var(--space-4);
+  font-size: var(--text-xs); font-style: italic; color: var(--color-text-faint); line-height: 1.5; }
+
 /* History overlay */
 .history-overlay { position: fixed; inset: 0; background: oklch(from var(--color-bg) l c h / 0.96);
   backdrop-filter: blur(8px); z-index: 100; display: none; flex-direction: column;
@@ -1848,9 +1864,81 @@ function renderDailyBriefing() {
   el.innerHTML = `<div class="briefing-card"><div class="briefing-heading">${heading}</div><div class="briefing-body">${body}${btn}</div></div>`;
 }
 
+// ─── GTG Philosophy ───
+const GTG_PHILOSOPHY = [
+  { title: 'What is Grease the Groove?', body: 'A method created by Pavel Tsatsouline for building strength through frequent, sub-maximal practice. Instead of grinding out hard sets in a gym, you spread easy sets throughout your day. You\u2019re training your nervous system to fire more efficiently \u2014 making each rep feel easier over time.' },
+  { title: 'The 50% Rule', body: 'Never do more than half your max in a single set. If your max is 8 pull-ups, your GTG sets should be 4 reps. This keeps you fresh and prevents fatigue from accumulating across the day. The goal is to practice the movement, not exhaust the muscle.' },
+  { title: 'Frequency Over Intensity', body: '5\u201310 easy sets spread across the day beats 3 hard sets in a row. Think of it like studying flashcards \u2014 short, frequent reviews beat cramming. Each set is a \u201cpractice rep\u201d for your nervous system. More practice sessions = faster neural adaptation.' },
+  { title: 'Never Train to Failure', body: 'Every set should feel easy. If your form breaks down or the last rep is a grind, you\u2019re doing too many reps. Dial it back. GTG is about quality movement, not fighting through fatigue. You should feel like you could do 2\u20133 more reps after every set.' },
+  { title: 'Rest Between Sets', body: 'Minimum 15 minutes between sets, ideally 1+ hours. You should feel completely fresh before starting each set. This isn\u2019t a circuit or superset \u2014 it\u2019s spaced practice. Set a timer, go about your day, and come back when you\u2019re fully recovered.' },
+  { title: 'When to Retest Your Max', body: 'Every 2\u20134 weeks, do a fresh max test to recalibrate your training numbers. If your daily sets have been feeling too easy for a week or more, you\u2019re probably ready. If your max stops improving after a retest, take a deload week \u2014 cut your volume in half for 5\u20137 days, then retest again.' },
+];
+
+const COACH_TIER_TIPS = {
+  beginner: [
+    'Can\u2019t do a pull-up yet? Eccentric (slow lowering) reps build the same strength. Jump up, lower slowly for 5 seconds.',
+    'Band-assisted reps count. Focus on the full range of motion \u2014 dead hang at the bottom, chin over bar at the top.',
+    'Dead hangs build grip strength. Start with 15-second holds and add 5 seconds each week.',
+    'Wall push-ups and knee push-ups are legit. Master the form before adding difficulty.',
+  ],
+  intermediate: [
+    'Mix grip styles to avoid plateaus. Chin-ups and neutral grip recruit your biceps differently than standard pull-ups.',
+    'If you\u2019ve been stuck at the same max for 2 weeks, try adding one weighted set per day at 50% of your bodyweight reps.',
+    'Your sets should feel almost boring. If you\u2019re straining, you\u2019re doing too many reps per set.',
+  ],
+  advanced: [
+    'Weighted pull-ups are your primary growth tool now. Start with 10 lbs and add 5 lbs when sets feel easy.',
+    'Try 2-week GTG cycles: 2 weeks on, 3 days deload, retest. This prevents neural fatigue.',
+    'L-sit pull-ups and typewriters build functional strength that transfers to climbing and gymnastics.',
+  ],
+  hardcore: [
+    'At your level, skill work replaces volume. Muscle-ups, one-arm progressions, and front lever practice.',
+    'Weighted is king. 50% of your sets should be weighted. Alternate heavy singles and moderate triples.',
+    'Consider 2-week training blocks: Week 1 volume, Week 2 intensity, then deload and retest.',
+  ],
+};
+
+function renderPhilosophySection() {
+  const el = document.getElementById('coachPhilosophy');
+  if (!el) return;
+
+  let html = '<h3 style="font-size:var(--text-sm);font-weight:700;margin-bottom:var(--space-3)">Learn GTG</h3>';
+  GTG_PHILOSOPHY.forEach((card, i) => {
+    html += `<div class="philosophy-card" data-idx="${i}">
+      <div class="philosophy-card-header">
+        <span>${card.title}</span>
+        <span class="philosophy-chevron">▸</span>
+      </div>
+      <div class="philosophy-card-body"><p>${card.body}</p></div>
+    </div>`;
+  });
+
+  // Tier-specific tip
+  const tiers = state.tiers || {};
+  const pullTier = (tiers.pullup && tiers.pullup.tier) || 'beginner';
+  const tips = COACH_TIER_TIPS[pullTier] || COACH_TIER_TIPS.beginner;
+  const tip = tips[Math.floor(Math.random() * tips.length)];
+  html += `<div class="coach-tier-tip" id="coachTierTip">${tip}</div>`;
+
+  el.innerHTML = html;
+
+  // Accordion behavior
+  el.querySelectorAll('.philosophy-card-header').forEach(header => {
+    header.addEventListener('click', () => {
+      const card = header.parentElement;
+      const wasExpanded = card.classList.contains('expanded');
+      // Close all
+      el.querySelectorAll('.philosophy-card').forEach(c => c.classList.remove('expanded'));
+      // Toggle clicked
+      if (!wasExpanded) card.classList.add('expanded');
+    });
+  });
+}
+
 // ─── Navigation ───
 function renderCoachTab() {
   renderDailyBriefing();
+  renderPhilosophySection();
 }
 
 document.querySelectorAll('.nav-item').forEach(item => {
