@@ -396,6 +396,23 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
   font-weight: 500; color: var(--color-error); background: var(--color-surface); }
 .danger-btn:hover { background: var(--color-surface-offset); }
 
+/* Coach sections */
+.coach-section { margin-bottom: var(--space-6); }
+
+/* History overlay */
+.history-overlay { position: fixed; inset: 0; background: oklch(from var(--color-bg) l c h / 0.96);
+  backdrop-filter: blur(8px); z-index: 100; display: none; flex-direction: column;
+  overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.history-overlay.visible { display: flex; }
+.history-overlay-header { display: flex; justify-content: space-between; align-items: center;
+  padding: var(--space-4) var(--space-5); position: sticky; top: 0;
+  background: oklch(from var(--color-bg) l c h / 0.95); backdrop-filter: blur(8px); z-index: 1; }
+.history-overlay-header h2 { font-size: var(--text-lg); font-weight: 700; }
+.history-overlay-close { width: 36px; height: 36px; border-radius: var(--radius-full); background: var(--color-surface-offset);
+  display: grid; place-items: center; font-size: var(--text-lg); min-height: 44px; min-width: 44px; }
+.history-overlay-close:hover { background: var(--color-surface-offset-2); }
+.history-overlay-content { padding: 0 var(--space-5) var(--space-5); flex: 1; }
+
 /* Achievement detail overlay */
 .achievement-detail-overlay { position: fixed; inset: 0; background: oklch(from var(--color-bg) l c h / 0.92); display: none;
   place-items: center; z-index: 150; backdrop-filter: blur(8px); padding: var(--space-4); }
@@ -730,10 +747,21 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
       <h3>30-Day Volume</h3>
       <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
     </div>
+    <div style="text-align:center;padding:var(--space-4) 0">
+      <button class="action-btn" id="openHistoryFromStats" style="font-size:var(--text-sm);color:var(--color-primary);background:none;text-decoration:underline">View Full History</button>
+    </div>
   </div>
 
-  <!-- HISTORY -->
-  <div class="panel" id="panel-history">
+  <!-- COACH -->
+  <div class="panel" id="panel-coach">
+    <div class="coach-section" id="coachBriefing"></div>
+    <div class="coach-section" id="coachPhilosophy"></div>
+    <div class="coach-section" id="coachPlan"></div>
+    <div class="coach-section" id="coachAssessment"></div>
+  </div>
+
+  <!-- HISTORY (overlay, not in nav) -->
+  <div class="panel" id="panel-history" style="display:none">
     <div class="cal-header">
       <button class="cal-nav-btn" id="calPrev" aria-label="Previous month">←</button>
       <h2 id="calTitle"></h2>
@@ -799,6 +827,10 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
 
     <div class="section-label">Data</div>
     <div class="setting-row">
+      <span class="setting-label">View workout history</span>
+      <button class="action-btn" id="openHistoryFromSettings" style="font-size:var(--text-xs)">View History</button>
+    </div>
+    <div class="setting-row">
       <span class="setting-label">Export workout data</span>
       <button class="action-btn" id="exportData" style="font-size:var(--text-xs)">Export JSON</button>
     </div>
@@ -823,15 +855,24 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
     Stats
   </button>
-  <button class="nav-item" data-nav="history" aria-label="History">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-    History
+  <button class="nav-item" data-nav="coach" aria-label="Coach">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2a5 5 0 0 1 5 5v1a5 5 0 0 1-10 0V7a5 5 0 0 1 5-5z"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>
+    Coach
   </button>
   <button class="nav-item" data-nav="settings" aria-label="Settings">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
     Settings
   </button>
 </nav>
+
+<!-- History overlay -->
+<div class="history-overlay" id="historyOverlay">
+  <div class="history-overlay-header">
+    <h2>Workout History</h2>
+    <button class="history-overlay-close" id="historyOverlayClose">×</button>
+  </div>
+  <div class="history-overlay-content" id="historyOverlayContent"></div>
+</div>
 
 <!-- Achievement detail overlay -->
 <div class="achievement-detail-overlay" id="achievementDetailOverlay">
@@ -1620,17 +1661,45 @@ let historyFilter = 'all';
 })();
 
 // ─── Navigation ───
+function renderCoachTab() {
+  // Shell for now — content will be added in Tasks 2–5
+}
+
 document.querySelectorAll('.nav-item').forEach(item => {
   item.addEventListener('click', () => {
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => { if (p.id !== 'panel-history') p.classList.remove('active'); });
     item.classList.add('active');
     document.getElementById('panel-' + item.dataset.nav).classList.add('active');
-    if (item.dataset.nav === 'history') { renderCalendar(); renderHistory(); }
+    if (item.dataset.nav === 'coach') { renderCoachTab(); }
     if (item.dataset.nav === 'stats') { updateCharts(); renderLeaderboard(); renderTrophies(); }
     if (item.dataset.nav === 'settings') { renderHouseholdSection(); renderAccountSection(); }
   });
 });
+
+// ─── History Overlay ───
+function openHistoryOverlay() {
+  const overlay = document.getElementById('historyOverlay');
+  const content = document.getElementById('historyOverlayContent');
+  // Move history panel content into the overlay
+  const historyPanel = document.getElementById('panel-history');
+  historyPanel.style.display = 'block';
+  content.innerHTML = '';
+  content.appendChild(historyPanel);
+  historyPanel.style.display = 'block';
+  overlay.classList.add('visible');
+  renderCalendar();
+  renderHistory();
+}
+
+function closeHistoryOverlay() {
+  const overlay = document.getElementById('historyOverlay');
+  overlay.classList.remove('visible');
+}
+
+document.getElementById('historyOverlayClose').addEventListener('click', closeHistoryOverlay);
+document.getElementById('openHistoryFromStats').addEventListener('click', openHistoryOverlay);
+document.getElementById('openHistoryFromSettings').addEventListener('click', openHistoryOverlay);
 
 // ─── Exercise picker ───
 function setExercise(ex) {
