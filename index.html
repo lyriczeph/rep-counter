@@ -2168,12 +2168,7 @@ function renderDailyBriefing() {
     body = `<div class="briefing-plan">${prog.pullSets} pull-up sets · ${prog.pushSets} push-up sets · ${totalReps} total reps</div>Rest up. Tomorrow is a <strong>${tomorrow.day}</strong> day.`;
   }
 
-  // Debug: show what prog variable actually contains
-  const dbg = `<div style="font-size:0.5rem;color:var(--color-text-faint);margin-top:8px;font-family:monospace">
-    prog used: pull=${prog.pullSets}/${targetPull} push=${prog.pushSets}/${targetPush} | reps=${prog.pullReps}+${prog.pushReps}=${totalReps}<br>
-    sched: ${sched.day} pullT=${targetPull} pushT=${targetPush} | hist=${state.history.length}
-  </div>`;
-  el.innerHTML = `<div class="briefing-card"><div class="briefing-heading">${heading}</div><div class="briefing-body">${body}${btn}</div>${dbg}</div>`;
+  el.innerHTML = `<div class="briefing-card"><div class="briefing-heading">${heading}</div><div class="briefing-body">${body}${btn}</div></div>`;
 }
 
 // ─── GTG Philosophy ───
