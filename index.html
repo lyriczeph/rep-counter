@@ -2027,15 +2027,16 @@ function generatePlan() {
     // Check if this day is a gym day (weekly override first, then recurring default)
     const isGym = weekOverrides ? (weekOverrides.includes(idx)) : gymDays.includes(idx);
 
+    // Gym day overrides everything — even rest days in the phase schedule
+    if (isGym) {
+      const baseSets = SET_COUNTS[day === 'rest' ? 'light' : day];
+      return { day: 'gym', pullSets: Math.min(3, Math.max(1, Math.floor(baseSets * 0.4))), pushSets: 0 };
+    }
+
     if (day === 'rest') return { day: 'rest', pullSets: 0, pushSets: 0 };
 
     let totalSets = SET_COUNTS[day];
     if (isBeginner) totalSets = Math.max(2, totalSets - 2);
-
-    if (isGym) {
-      // Gym day: no push-ups, reduced pull-ups
-      return { day: 'gym', pullSets: Math.min(3, Math.floor(totalSets * 0.4)), pushSets: 0 };
-    }
 
     // Apply push:pull ratio
     const pushSets = Math.round(totalSets * ratio / (1 + ratio));
@@ -2486,10 +2487,10 @@ function renderTrainingPlan() {
       weekHtml += `<div class="plan-day-sets">—</div>`;
       weekHtml += `<div class="plan-day-volume">Rest</div>`;
     } else if (isGym) {
-      weekHtml += `<div class="plan-day-gym-icon">🏋️</div>`;
       weekHtml += `<div class="plan-day-sets">${dayTotal}</div>`;
       weekHtml += `<div class="plan-day-volume">Gym</div>`;
       weekHtml += `<div class="plan-day-breakdown">${sched.pullSets} pull</div>`;
+      weekHtml += `<div class="plan-day-gym-icon">🏋️</div>`;
     } else {
       weekHtml += `<div class="plan-day-sets">${dayTotal}</div>`;
       weekHtml += `<div class="plan-day-volume">${volLabels[sched.day] || sched.day}</div>`;
@@ -2580,23 +2581,25 @@ function renderTrainingPlan() {
   const todayIsGym = gymDaysArr.includes(todayDow);
   if (state.sets && !todayIsGym) state.sets.forEach(s => { if (s.exercise === 'pullup') weekPullSets++; else weekPushSets++; });
   if (weekPullSets > 0 || weekPushSets > 0) {
-    const actualRatio = weekPullSets > 0 ? (weekPushSets / weekPullSets) : 0;
-    const targetLabel = targetRatio <= 1 ? `Push 1 : Pull ${(1/targetRatio).toFixed(1)}` : `Push ${targetRatio.toFixed(1)} : Pull 1`;
-    const actualLabel = weekPullSets > 0
-      ? (actualRatio <= 1 ? `Push 1 : Pull ${(1/Math.max(0.01, actualRatio)).toFixed(1)}` : `Push ${actualRatio.toFixed(1)} : Pull 1`)
-      : `${weekPushSets} push only`;
+    const actualRatio = weekPullSets > 0 ? (weekPushSets / weekPullSets) : (weekPushSets > 0 ? 99 : 0);
+    // Format: always show as "X push : Y pull" using raw counts for actual
+    const targetLabel = targetRatio >= 1
+      ? `${targetRatio.toFixed(1)} push : 1 pull`
+      : `1 push : ${(1/targetRatio).toFixed(1)} pull`;
+    const actualLabel = `${weekPushSets} push : ${weekPullSets} pull`;
     const diff = Math.abs(actualRatio - targetRatio);
     if (diff <= 0.3) {
-      complianceHtml = `<div class="ratio-compliance">Target ${targetLabel}<br>Actual ${actualLabel} \u2014 <span class="good">on track</span></div>`;
+      complianceHtml = `<div class="ratio-compliance">This week: ${actualLabel}<br><span class="good">On track for ${targetLabel}</span></div>`;
     } else {
-      // Determine which direction to nudge
       let nudge = '';
-      if (actualRatio > targetRatio) {
-        nudge = 'Add more pull-up sets to rebalance';
+      if (actualRatio < targetRatio) {
+        // Need more push relative to pull
+        nudge = 'Add more push-up sets to hit your ratio';
       } else {
-        nudge = 'Add more push-up sets to rebalance';
+        // Need more pull relative to push
+        nudge = 'Add more pull-up sets to hit your ratio';
       }
-      complianceHtml = `<div class="ratio-compliance">Target ${targetLabel}<br>Actual ${actualLabel}<br><span class="nudge">${nudge}</span></div>`;
+      complianceHtml = `<div class="ratio-compliance">This week: ${actualLabel}<br>Target: ${targetLabel}<br><span class="nudge">${nudge}</span></div>`;
     }
   }
 
