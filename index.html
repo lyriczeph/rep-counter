@@ -967,21 +967,9 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
 
   <!-- SETTINGS -->
   <div class="panel" id="panel-settings">
-    <div class="section-label">Display</div>
-    <div class="setting-row">
-      <span class="setting-label">Exercise figure</span>
-      <div class="setting-control">
-        <div class="tier-segmented" id="figureToggle" style="width: 130px;">
-          <button class="tier-seg-btn active" data-figure="male">Male</button>
-          <button class="tier-seg-btn" data-figure="female">Female</button>
-        </div>
-      </div>
-    </div>
-    <div class="section-label">Timer</div>
-    <div class="setting-row">
-      <span class="setting-label">Rest timer (seconds)</span>
-      <div class="setting-control"><input type="number" id="restTime" value="5" min="0" max="600" step="5"></div>
-    </div>
+    <!-- Training -->
+    <div id="tierSettingsSection"></div>
+
     <div class="section-label">Gym Days</div>
     <div style="padding:var(--space-2) var(--space-4);font-size:var(--text-xs);color:var(--color-text-muted)">On gym days, push-ups are skipped (you press in the gym) and pull-ups are reduced to easy maintenance sets.</div>
     <div class="gym-day-row" id="gymDaySelector"></div>
@@ -991,6 +979,12 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
     <div class="ratio-presets" id="ratioPresets"></div>
     <div id="ratioScienceSection" style="padding:0 var(--space-4) var(--space-2)"></div>
 
+    <!-- Session -->
+    <div class="section-label">Timer</div>
+    <div class="setting-row">
+      <span class="setting-label">Rest timer (seconds)</span>
+      <div class="setting-control"><input type="number" id="restTime" value="5" min="0" max="600" step="5"></div>
+    </div>
     <div class="section-label">Reminders</div>
     <div class="setting-row">
       <span class="setting-label">Nudge me if inactive</span>
@@ -1013,11 +1007,23 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
       </div>
     </div>
 
-    <!-- Tier Section -->
-    <div id="tierSettingsSection"></div>
+    <!-- Preferences -->
+    <div class="section-label">Display</div>
+    <div class="setting-row">
+      <span class="setting-label">Exercise figure</span>
+      <div class="setting-control">
+        <div class="tier-segmented" id="figureToggle" style="width: 130px;">
+          <button class="tier-seg-btn active" data-figure="male">Male</button>
+          <button class="tier-seg-btn" data-figure="female">Female</button>
+        </div>
+      </div>
+    </div>
 
-    <!-- Household Section -->
+    <!-- Social -->
     <div id="householdSection"></div>
+
+    <!-- Account & Data -->
+    <div id="accountSection"></div>
 
     <div class="section-label">Data</div>
     <div class="setting-row">
@@ -1028,9 +1034,6 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
       <span class="setting-label">Export workout data</span>
       <button class="action-btn" id="exportData" style="font-size:var(--text-xs)">Export JSON</button>
     </div>
-
-    <!-- Account Section -->
-    <div id="accountSection"></div>
 
     <div style="text-align:center;margin-top:var(--space-6)">
       <button class="danger-btn" id="clearHistory">Clear all history</button>
