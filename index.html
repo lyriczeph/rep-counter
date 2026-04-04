@@ -517,18 +517,16 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
   display: grid; place-items: center; cursor: pointer; transition: all var(--transition-interactive); -webkit-tap-highlight-color: transparent; }
 .gym-day-btn.active { background: var(--color-secondary); border-color: var(--color-secondary); color: var(--color-text-inverse); }
 
-/* Push:Pull ratio slider */
-.ratio-slider-wrap { padding: var(--space-3) var(--space-4); }
-.ratio-slider { width: 100%; height: 6px; -webkit-appearance: none; appearance: none; border-radius: 3px;
-  background: var(--color-surface-offset); outline: none; cursor: pointer; }
-.ratio-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px;
-  border-radius: var(--radius-full); background: var(--color-primary); border: 3px solid var(--color-surface);
-  box-shadow: var(--shadow-sm); cursor: pointer; }
-.ratio-slider::-moz-range-thumb { width: 24px; height: 24px; border-radius: var(--radius-full);
-  background: var(--color-primary); border: 3px solid var(--color-surface); box-shadow: var(--shadow-sm); cursor: pointer; }
-.ratio-ticks { display: flex; justify-content: space-between; padding: var(--space-1) 2px 0; }
-.ratio-tick { font-size: 0.6rem; color: var(--color-text-faint); text-align: center; }
-.ratio-display { text-align: center; margin-top: var(--space-2); font-size: var(--text-sm); font-weight: 600; color: var(--color-text); }
+/* Push:Pull ratio presets */
+.ratio-presets { display: flex; gap: var(--space-1); padding: var(--space-2) var(--space-4); justify-content: center; }
+.ratio-preset-btn { flex: 1; max-width: 80px; padding: var(--space-2) var(--space-1); border-radius: var(--radius-md);
+  border: 2px solid var(--color-border); background: var(--color-surface); cursor: pointer;
+  text-align: center; transition: all var(--transition-interactive); -webkit-tap-highlight-color: transparent; }
+.ratio-preset-btn .ratio-preset-label { font-size: var(--text-xs); font-weight: 700; color: var(--color-text); line-height: 1.3; }
+.ratio-preset-btn .ratio-preset-sub { font-size: 0.55rem; color: var(--color-text-faint); margin-top: 1px; }
+.ratio-preset-btn.active { border-color: var(--color-primary); background: var(--color-primary-highlight); }
+.ratio-preset-btn.active .ratio-preset-label { color: var(--color-primary); }
+.ratio-preset-btn.active .ratio-preset-sub { color: var(--color-primary); }
 
 /* Gym day styling in weekly plan */
 .plan-day.gym { border: 2px solid var(--color-secondary); background: var(--color-secondary-highlight); }
@@ -989,16 +987,9 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
     <div class="gym-day-row" id="gymDaySelector"></div>
 
     <div class="section-label">Push : Pull Ratio</div>
-    <div class="ratio-slider-wrap">
-      <input type="range" class="ratio-slider" id="ratioSlider" min="0.5" max="2.0" step="0.1" value="0.67">
-      <div class="ratio-ticks">
-        <span class="ratio-tick">1:2<br>Pull</span>
-        <span class="ratio-tick">1:1.5<br>Slight</span>
-        <span class="ratio-tick">1:1<br>Even</span>
-        <span class="ratio-tick">2:1<br>Push</span>
-      </div>
-      <div class="ratio-display" id="ratioDisplay">Push 1 : Pull 1.5</div>
-    </div>
+    <div style="padding:var(--space-2) var(--space-4);font-size:var(--text-xs);color:var(--color-text-muted)">Controls how your daily sets are split between push-ups and pull-ups. This only affects set counts — reps per set stay the same.</div>
+    <div class="ratio-presets" id="ratioPresets"></div>
+    <div id="ratioScienceSection" style="padding:0 var(--space-4) var(--space-2)"></div>
 
     <div class="section-label">Reminders</div>
     <div class="setting-row">
@@ -4147,30 +4138,45 @@ document.getElementById('exportData').addEventListener('click', () => {
   });
 })();
 
-// ─── Push:Pull Ratio Slider ───
-(function initRatioSlider() {
-  const slider = document.getElementById('ratioSlider');
-  const display = document.getElementById('ratioDisplay');
-  if (!slider || !display) return;
-  slider.value = state.pushPullRatio ?? 0.67;
-  const snaps = [0.5, 0.67, 1.0, 2.0];
-  function updateDisplay(val) {
-    val = parseFloat(val);
-    if (val >= 1) display.textContent = `Push ${val.toFixed(1)} : Pull 1`;
-    else display.textContent = `Push 1 : Pull ${(1/val).toFixed(1)}`;
-  }
-  updateDisplay(slider.value);
-  slider.addEventListener('input', () => {
-    let v = parseFloat(slider.value);
-    // Snap to labeled points when within 0.05
-    for (const s of snaps) { if (Math.abs(v - s) < 0.05) { v = s; slider.value = v; break; } }
-    updateDisplay(v);
+// ─── Push:Pull Ratio Presets ───
+const RATIO_PRESETS = [
+  { value: 0.5,  label: '1 : 2', sub: 'Pull Heavy' },
+  { value: 0.67, label: '1 : 1.5', sub: 'Slight Pull' },
+  { value: 1.0,  label: '1 : 1', sub: 'Balanced' },
+  { value: 2.0,  label: '2 : 1', sub: 'Push Heavy' },
+];
+(function initRatioPresets() {
+  const container = document.getElementById('ratioPresets');
+  if (!container) return;
+  const current = state.pushPullRatio ?? 0.67;
+  RATIO_PRESETS.forEach(preset => {
+    const btn = document.createElement('button');
+    btn.className = 'ratio-preset-btn' + (Math.abs(current - preset.value) < 0.05 ? ' active' : '');
+    btn.innerHTML = `<div class="ratio-preset-label">${preset.label}</div><div class="ratio-preset-sub">${preset.sub}</div>`;
+    btn.addEventListener('click', () => {
+      state.pushPullRatio = preset.value;
+      container.querySelectorAll('.ratio-preset-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      saveStateLocal(); saveSettingsToCloud();
+      generatePlan();
+    });
+    container.appendChild(btn);
   });
-  slider.addEventListener('change', () => {
-    state.pushPullRatio = parseFloat(slider.value);
-    saveStateLocal(); saveSettingsToCloud();
-    generatePlan();
-  });
+})();
+
+// ─── Ratio Science Expandable ───
+(function initRatioScience() {
+  const container = document.getElementById('ratioScienceSection');
+  if (!container) return;
+  const items = [
+    { title: 'Why pull more than push?', body: 'Most people have stronger pushing muscles (chest, triceps) from daily activities and gym work. Pulling muscles (back, biceps) are often undertrained. A pull-biased ratio corrects this imbalance, improves posture, and protects your shoulders.' },
+    { title: 'When to go balanced', body: 'If you don\u2019t bench press or do overhead work in the gym, a 1:1 ratio works well. Your push-ups and pull-ups will progress together. This is also good for beginners building a base.' },
+    { title: 'When to go push-heavy', body: 'Rare for GTG. A push bias makes sense if you\u2019re specifically training for push-up tests or competitions, or if your pull-up volume is already high from climbing or gym back work.' },
+    { title: 'Gym day interaction', body: 'On gym days, the ratio is overridden \u2014 push-ups drop to zero (since you\u2019re pressing in the gym) and pull-ups reduce to easy maintenance sets. The ratio applies to all other training days.' },
+  ];
+  container.innerHTML = items.map(item =>
+    `<div class="philosophy-card"><div class="philosophy-card-header" onclick="this.parentElement.classList.toggle('expanded')">${item.title}<span class="philosophy-chevron">\u25B8</span></div><div class="philosophy-card-body"><p>${item.body}</p></div></div>`
+  ).join('');
 })();
 
 renderCalendar();
