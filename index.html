@@ -984,16 +984,6 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
       <span class="setting-label">Rest timer (seconds)</span>
       <div class="setting-control"><input type="number" id="restTime" value="5" min="0" max="600" step="5"></div>
     </div>
-    <div class="section-label">Goals</div>
-    <div class="setting-row">
-      <span class="setting-label">Pull-up target / set</span>
-      <div class="setting-control"><input type="number" id="targetPullups" value="10" min="1" max="100"></div>
-    </div>
-    <div class="setting-row">
-      <span class="setting-label">Push-up target / set</span>
-      <div class="setting-control"><input type="number" id="targetPushups" value="20" min="1" max="100"></div>
-    </div>
-
     <div class="section-label">Gym Days</div>
     <div style="padding:var(--space-2) var(--space-4);font-size:var(--text-xs);color:var(--color-text-muted)">On gym days, push-ups are skipped (you press in the gym) and pull-ups are reduced to easy maintenance sets.</div>
     <div class="gym-day-row" id="gymDaySelector"></div>
@@ -1816,8 +1806,6 @@ async function syncFromCloud() {
       state.targetPullups = sRes.data.target_pullups || 10;
       state.targetPushups = sRes.data.target_pushups || 20;
       document.getElementById('restTime').value = state.restSeconds;
-      document.getElementById('targetPullups').value = state.targetPullups;
-      document.getElementById('targetPushups').value = state.targetPushups;
       // Load new settings fields
       if (sRes.data.gym_days) {
         try { state.gymDays = JSON.parse(sRes.data.gym_days); } catch(e) { state.gymDays = []; }
@@ -4124,11 +4112,7 @@ function deleteWorkout(i) {
 
 // ─── Settings ───
 document.getElementById('restTime').value = state.restSeconds;
-document.getElementById('targetPullups').value = state.targetPullups;
-document.getElementById('targetPushups').value = state.targetPushups;
 document.getElementById('restTime').addEventListener('change', e => { state.restSeconds = parseInt(e.target.value)||5; saveState(); saveSettingsToCloud(); });
-document.getElementById('targetPullups').addEventListener('change', e => { state.targetPullups = parseInt(e.target.value)||10; saveState(); saveSettingsToCloud(); });
-document.getElementById('targetPushups').addEventListener('change', e => { state.targetPushups = parseInt(e.target.value)||20; saveState(); saveSettingsToCloud(); });
 document.getElementById('clearHistory').addEventListener('click', () => { if (confirm('Clear all workout history?')) { state.history = []; saveState(); renderHistory(); } });
 document.getElementById('exportData').addEventListener('click', () => {
   const blob = new Blob([JSON.stringify(state.history, null, 2)], { type: 'application/json' });
@@ -4764,15 +4748,10 @@ function setTierForExercise(exercise, tier, max, isTest) {
     state.tiers[exercise].maxHistory.push({ date: toLocalDateKey(new Date()), max: max });
   }
   state.tiers.assessed = true;
-  // Update GTG target
+  // Update GTG target (kept in state for cloud sync backward compat)
   const target = Math.max(1, Math.round((state.tiers[exercise].max || 1) * 0.5));
-  if (exercise === 'pullup') {
-    state.targetPullups = target;
-    document.getElementById('targetPullups').value = target;
-  } else {
-    state.targetPushups = target;
-    document.getElementById('targetPushups').value = target;
-  }
+  if (exercise === 'pullup') state.targetPullups = target;
+  else state.targetPushups = target;
   saveTierState();
 }
 
