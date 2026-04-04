@@ -1865,7 +1865,13 @@ function saveState() { saveStateLocal(); }
 
 const defaults = { currentReps: 0, sets: [], setNumber: 1, history: [], restSeconds: 5, targetPullups: 10, targetPushups: 20, exercise: 'pullup', variant: 'standard', currentWeight: 10 };
 const saved = loadStateLocal() || {};
-let state = Object.assign({}, defaults, { history: saved.history || [], restSeconds: saved.restSeconds || 5, targetPullups: saved.targetPullups || 10, targetPushups: saved.targetPushups || 20 });
+let state = Object.assign({}, defaults, {
+  history: saved.history || [], restSeconds: saved.restSeconds || 5,
+  targetPullups: saved.targetPullups || 10, targetPushups: saved.targetPushups || 20,
+  gymDays: Array.isArray(saved.gymDays) ? saved.gymDays : [],
+  gymDayOverrides: saved.gymDayOverrides || {},
+  pushPullRatio: typeof saved.pushPullRatio === 'number' ? saved.pushPullRatio : 0.67
+});
 
 // sets: [{reps, exercise, variant}]
 let restInterval = null;
