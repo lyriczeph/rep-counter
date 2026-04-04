@@ -531,12 +531,13 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
 
 /* Gym day styling in weekly plan */
 .plan-day.gym { border: 2px solid var(--color-secondary); background: var(--color-secondary-highlight); }
-.plan-day-breakdown { font-size: 0.5rem; color: var(--color-text-faint); margin-top: 1px; font-variant-numeric: tabular-nums; }
+.plan-day-gym-icon { font-size: 0.65rem; line-height: 1; margin-bottom: 1px; }
+.plan-day-breakdown { font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 2px; font-variant-numeric: tabular-nums; line-height: 1.2; }
 
 /* Ratio compliance line */
-.ratio-compliance { font-size: var(--text-xs); color: var(--color-text-muted); text-align: center; margin-top: var(--space-3); }
-.ratio-compliance .good { color: var(--color-success); }
-.ratio-compliance .drift { color: var(--color-orange); }
+.ratio-compliance { font-size: var(--text-xs); color: var(--color-text-muted); text-align: center; margin-top: var(--space-3); line-height: 1.5; }
+.ratio-compliance .good { color: var(--color-success); font-weight: 600; }
+.ratio-compliance .nudge { color: var(--color-text-muted); font-style: italic; }
 
 /* Progress chart */
 .progress-chart-wrap { height: 180px; position: relative; }
@@ -2484,10 +2485,15 @@ function renderTrainingPlan() {
     if (isRest) {
       weekHtml += `<div class="plan-day-sets">—</div>`;
       weekHtml += `<div class="plan-day-volume">Rest</div>`;
+    } else if (isGym) {
+      weekHtml += `<div class="plan-day-gym-icon">🏋️</div>`;
+      weekHtml += `<div class="plan-day-sets">${dayTotal}</div>`;
+      weekHtml += `<div class="plan-day-volume">Gym</div>`;
+      weekHtml += `<div class="plan-day-breakdown">${sched.pullSets} pull</div>`;
     } else {
       weekHtml += `<div class="plan-day-sets">${dayTotal}</div>`;
       weekHtml += `<div class="plan-day-volume">${volLabels[sched.day] || sched.day}</div>`;
-      weekHtml += `<div class="plan-day-breakdown">${sched.pushSets}P/${sched.pullSets}L</div>`;
+      weekHtml += `<div class="plan-day-breakdown">${sched.pushSets} push<br>${sched.pullSets} pull</div>`;
     }
     weekHtml += '</div>';
   });
@@ -2575,11 +2581,23 @@ function renderTrainingPlan() {
   if (state.sets && !todayIsGym) state.sets.forEach(s => { if (s.exercise === 'pullup') weekPullSets++; else weekPushSets++; });
   if (weekPullSets > 0 || weekPushSets > 0) {
     const actualRatio = weekPullSets > 0 ? (weekPushSets / weekPullSets) : 0;
-    const targetLabel = targetRatio <= 1 ? `1:${(1/targetRatio).toFixed(1)}` : `${targetRatio.toFixed(1)}:1`;
-    const actualDisplay = `${weekPushSets}P:${weekPullSets}L`;
+    const targetLabel = targetRatio <= 1 ? `Push 1 : Pull ${(1/targetRatio).toFixed(1)}` : `Push ${targetRatio.toFixed(1)} : Pull 1`;
+    const actualLabel = weekPullSets > 0
+      ? (actualRatio <= 1 ? `Push 1 : Pull ${(1/Math.max(0.01, actualRatio)).toFixed(1)}` : `Push ${actualRatio.toFixed(1)} : Pull 1`)
+      : `${weekPushSets} push only`;
     const diff = Math.abs(actualRatio - targetRatio);
-    const icon = diff <= 0.3 ? '<span class="good">\u2713</span>' : '<span class="drift">\u2717</span>';
-    complianceHtml = `<div class="ratio-compliance">Target push:pull ${targetLabel} \u2192 Actual ${actualDisplay} ${icon}</div>`;
+    if (diff <= 0.3) {
+      complianceHtml = `<div class="ratio-compliance">Target ${targetLabel}<br>Actual ${actualLabel} \u2014 <span class="good">on track</span></div>`;
+    } else {
+      // Determine which direction to nudge
+      let nudge = '';
+      if (actualRatio > targetRatio) {
+        nudge = 'Add more pull-up sets to rebalance';
+      } else {
+        nudge = 'Add more push-up sets to rebalance';
+      }
+      complianceHtml = `<div class="ratio-compliance">Target ${targetLabel}<br>Actual ${actualLabel}<br><span class="nudge">${nudge}</span></div>`;
+    }
   }
 
   el.innerHTML = `<h3 class="coach-heading">This Week\u2019s Plan</h3>${blockHtml}${weekHtml}${detailHtml}${complianceHtml}`;
