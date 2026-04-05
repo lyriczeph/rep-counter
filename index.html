@@ -4336,13 +4336,41 @@ function sendNudgeNotification() {
   if (isQuietHours()) return;
   if (Notification.permission !== 'granted') return;
 
+  // Check if all sets are done for today — don't nudge if complete
+  const sched = getTodaySchedule();
+  const prog = getTodayProgress();
+  const targetPull = sched.pullSets || 0;
+  const targetPush = sched.pushSets || 0;
+  if (sched.day === 'rest' || (sched.day === 'gym' && targetPull === 0)) return;
+  if (prog.pullSets >= targetPull && prog.pushSets >= targetPush) return; // all done!
+
+  // Build a personalized message
+  const hr = new Date().getHours();
   const lastTime = getLastWorkoutTime();
-  let body = 'Time for some reps?';
-  if (lastTime) {
-    const hoursAgo = Math.round((Date.now() - lastTime.getTime()) / 3600000);
-    body = `It\u2019s been ${hoursAgo}h since your last set. Time for some reps?`;
+  const pullLeft = Math.max(0, targetPull - prog.pullSets);
+  const pushLeft = Math.max(0, targetPush - prog.pushSets);
+  const totalLeft = pullLeft + pushLeft;
+  const totalDone = prog.pullSets + prog.pushSets;
+
+  let body = '';
+  if (totalDone === 0) {
+    // No sets done yet
+    if (hr < 12) body = 'Morning is prime time for pull-ups. Start your first set.';
+    else if (hr < 17) body = `${totalLeft} sets on the board today. Knock one out now.`;
+    else body = `Still time to get your sets in. ${totalLeft} to go.`;
+  } else if (totalLeft <= 2) {
+    // Almost done
+    body = `Just ${totalLeft} set${totalLeft === 1 ? '' : 's'} left today. Finish strong.`;
   } else {
-    body = 'No reps logged today yet. Get some in?';
+    // Mid-day, some progress
+    const lastHrs = lastTime ? Math.round((Date.now() - lastTime.getTime()) / 3600000) : 0;
+    if (pullLeft > 0 && pushLeft > 0) {
+      body = `${pullLeft} pull + ${pushLeft} push left. ${lastHrs >= 2 ? `It\u2019s been ${lastHrs}h \u2014 stay fresh.` : 'Keep it rolling.'}`;
+    } else if (pullLeft > 0) {
+      body = `${pullLeft} pull-up set${pullLeft === 1 ? '' : 's'} to go. Quick set before ${hr < 17 ? 'your next task' : 'winding down'}.`;
+    } else {
+      body = `${pushLeft} push-up set${pushLeft === 1 ? '' : 's'} to go. Quick set before ${hr < 17 ? 'your next task' : 'winding down'}.`;
+    }
   }
 
   if (navigator.serviceWorker.controller) {
