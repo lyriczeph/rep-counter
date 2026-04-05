@@ -447,8 +447,8 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
 .plan-day-type.light { background: transparent; color: var(--color-text-muted); border: 1px solid var(--color-border); }
 .plan-day-type.gym { background: transparent; color: var(--color-text-muted); }
 .plan-day-type.rest { color: var(--color-text-faint); }
-.plan-day-sets-detail { font-size: 0.6rem; color: var(--color-text-muted); line-height: 1.35; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.plan-day-check { font-size: 0.6rem; color: var(--color-success); }
+.plan-day-sets-detail { font-size: var(--text-xs); color: var(--color-text-muted); line-height: 1.4; font-variant-numeric: tabular-nums; }
+.plan-day-check { font-size: var(--text-xs); font-weight: 700; color: var(--color-success); }
 
 /* Phase timeline */
 .phase-timeline { display: flex; gap: var(--space-1); margin-bottom: var(--space-3); flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -2464,8 +2464,7 @@ function renderTrainingPlan() {
   }
 
   // Weekly row
-  let weekHtml = '<div style="display:flex;justify-content:flex-end;gap:var(--space-3);padding:0 var(--space-1) var(--space-1);font-size:0.55rem;color:var(--color-text-faint)"><span><span style="color:var(--chart-primary);font-weight:700">\u25CF</span> pull sets</span><span><span style="color:var(--chart-secondary);font-weight:700">\u25CF</span> push sets</span></div>';
-  weekHtml += '<div class="plan-week">';
+  let weekHtml = '<div class="plan-week">';
   weekDates.forEach((date, i) => {
     const sched = plan.schedule[i];
     const dateKey = toLocalDateKey(date);
@@ -2497,7 +2496,7 @@ function renderTrainingPlan() {
       weekHtml += `<div class="plan-day-sets-detail">${sched.pullSets} pull</div>`;
     } else {
       weekHtml += `<div class="plan-day-type ${sched.day}">${volLabels[sched.day] || sched.day}</div>`;
-      weekHtml += `<div class="plan-day-sets-detail"><span style="color:var(--chart-primary)">${sched.pullSets}</span>\u2009/\u2009<span style="color:var(--chart-secondary)">${sched.pushSets}</span></div>`;
+      weekHtml += `<div class="plan-day-sets-detail"><span style="color:var(--chart-primary)">${sched.pullSets} pull</span><br><span style="color:var(--chart-secondary)">${sched.pushSets} push</span></div>`;
     }
     if (isDone || (isPast && hasWorkout)) weekHtml += `<div class="plan-day-check">\u2713</div>`;
     weekHtml += '</div>';
