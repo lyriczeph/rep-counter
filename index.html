@@ -3938,6 +3938,33 @@ async function leaveGroup() {
   } catch(e) { showToast('Error: ' + e.message); }
 }
 
+async function promptJoinGroup() {
+  if (!currentUser) return;
+  const code = (prompt('Enter 6-character invite code:') || '').trim().toUpperCase();
+  if (code.length !== 6) { if (code.length > 0) showToast('Code must be 6 characters'); return; }
+  try {
+    const { data: group, error } = await sb.from('groups')
+      .select('id, name').eq('invite_code', code).single();
+    if (error || !group) { showToast('Invalid invite code'); return; }
+    await sb.from('profiles').update({ group_id: group.id }).eq('id', currentUser.id);
+    currentProfile.group_id = group.id;
+    showToast('Joined crew: ' + group.name);
+    renderHouseholdSection();
+    renderLeaderboard();
+  } catch(e) { showToast('Error: ' + e.message); }
+}
+
+async function switchGroup(groupId) {
+  if (!currentUser) return;
+  try {
+    await sb.from('profiles').update({ group_id: groupId }).eq('id', currentUser.id);
+    currentProfile.group_id = groupId;
+    showToast('Switched crew');
+    renderHouseholdSection();
+    renderLeaderboard();
+  } catch(e) { showToast('Error: ' + e.message); }
+}
+
 async function renameGroup() {
   if (!currentUser || !currentProfile?.group_id) return;
   const name = prompt('New crew name:');
@@ -4019,6 +4046,25 @@ async function renderHouseholdSection() {
       </div>`;
     }).join('');
 
+    // Query other crews this user created or was a member of
+    let otherCrewsHtml = '';
+    try {
+      const { data: myCrews } = await sb.from('groups')
+        .select('id, name')
+        .eq('created_by', currentUser.id)
+        .neq('id', currentProfile.group_id);
+      if (myCrews && myCrews.length > 0) {
+        otherCrewsHtml = `<div class="group-card" style="margin-top:var(--space-2)">
+          <p style="font-size:var(--text-xs);font-weight:600;color:var(--color-text-muted);margin-bottom:var(--space-2)">Your other crews</p>
+          ${myCrews.map(c => `<div style="display:flex;align-items:center;justify-content:space-between;padding:var(--space-1) 0">
+            <span style="font-size:var(--text-sm)">${c.name}</span>
+            <button class="text-link text-link-sm" onclick="switchGroup('${c.id}')">Switch</button>
+          </div>`).join('')}
+        </div>`;
+      }
+    } catch(e) {}
+
+    const safeName = groupName.replace(/'/g, "\\'");
     section.innerHTML = `
       <div class="section-label">Crew</div>
       <div class="group-card">
@@ -4032,15 +4078,21 @@ async function renderHouseholdSection() {
           <span class="copy-hint">Tap to copy</span>
         </div>
         <div style="display:flex;gap:var(--space-2);justify-content:center;margin:var(--space-3) 0">
-          <button class="primary-btn" style="font-size:var(--text-xs);padding:var(--space-1) var(--space-3)" onclick="shareInvite('sms','${inviteCode}','${groupName.replace(/'/g, "\\'")}')">Text invite</button>
-          <button class="primary-btn" style="font-size:var(--text-xs);padding:var(--space-1) var(--space-3)" onclick="shareInvite('email','${inviteCode}','${groupName.replace(/'/g, "\\'")}')">Email invite</button>
+          <button class="primary-btn" style="font-size:var(--text-xs);padding:var(--space-1) var(--space-3)" onclick="shareInvite('sms','${inviteCode}','${safeName}')">Text invite</button>
+          <button class="primary-btn" style="font-size:var(--text-xs);padding:var(--space-1) var(--space-3)" onclick="shareInvite('email','${inviteCode}','${safeName}')">Email invite</button>
         </div>
         <p style="font-size:var(--text-xs);color:var(--color-text-muted);margin-bottom:var(--space-2)">Members (${(members || []).length}):</p>
         ${membersHtml}
-        <div style="margin-top:var(--space-4);text-align:center">
+        <div style="display:flex;gap:var(--space-3);justify-content:center;margin-top:var(--space-4)">
+          <button class="text-link text-link-sm" onclick="createGroup()">Create new crew</button>
+          <span style="color:var(--color-border)">|</span>
+          <button class="text-link text-link-sm" onclick="promptJoinGroup()">Join another crew</button>
+        </div>
+        <div style="margin-top:var(--space-3);text-align:center">
           <button class="danger-btn" onclick="leaveGroup()">Leave Crew</button>
         </div>
-      </div>`;
+      </div>
+      ${otherCrewsHtml}`;
   } catch(e) {
     section.innerHTML = `
       <div class="section-label">Crew</div>
