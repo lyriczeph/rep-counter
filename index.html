@@ -431,15 +431,24 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
   font-size: var(--text-xs); font-style: italic; color: var(--color-text-faint); line-height: 1.5; }
 
 /* Training plan week */
-.plan-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--space-1); margin-bottom: var(--space-4); }
-.plan-day { text-align: center; padding: var(--space-2) var(--space-1); border-radius: var(--radius-md); background: var(--color-surface); cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform 120ms ease; }
+.plan-week { display: flex; gap: 6px; margin-bottom: var(--space-4); overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px; }
+.plan-day { flex: 1; min-width: 44px; text-align: center; padding: 8px 4px 6px; border-radius: var(--radius-md);
+  background: var(--color-surface); cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: transform 120ms ease; display: flex; flex-direction: column; align-items: center; gap: 3px; }
 .plan-day:active { transform: scale(0.92); }
 .plan-day.today { outline: 2px solid var(--color-primary); outline-offset: -2px; }
-.plan-day.completed { background: var(--color-primary-highlight); }
-.plan-day.rest-day { opacity: 0.5; }
-.plan-day-label { font-size: 0.6rem; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase; margin-bottom: var(--space-1); }
-.plan-day-volume { font-size: 0.55rem; color: var(--color-text-faint); text-transform: uppercase; letter-spacing: 0.03em; }
-.plan-day-sets { font-size: var(--text-sm); font-weight: 700; font-variant-numeric: tabular-nums; }
+.plan-day.completed { opacity: 0.7; }
+.plan-day.rest-day { opacity: 0.4; }
+.plan-day-label { font-size: 0.65rem; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase; }
+.plan-day-type { font-size: 0.55rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
+  padding: 1px 5px; border-radius: var(--radius-full); line-height: 1.4; }
+.plan-day-type.heavy { background: var(--color-primary); color: var(--color-text-inverse); }
+.plan-day-type.medium { background: var(--color-surface-offset); color: var(--color-text); }
+.plan-day-type.light { background: transparent; color: var(--color-text-muted); border: 1px solid var(--color-border); }
+.plan-day-type.gym { background: transparent; color: var(--color-text-muted); }
+.plan-day-type.rest { color: var(--color-text-faint); }
+.plan-day-sets-detail { font-size: 0.6rem; color: var(--color-text-muted); line-height: 1.35; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.plan-day-check { font-size: 0.6rem; color: var(--color-success); }
 
 /* Phase timeline */
 .phase-timeline { display: flex; gap: var(--space-1); margin-bottom: var(--space-3); flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -529,10 +538,7 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
 .ratio-preset-btn.active .ratio-preset-label { color: var(--color-primary); }
 .ratio-preset-btn.active .ratio-preset-sub { color: var(--color-primary); }
 
-/* Gym day styling in weekly plan */
-.plan-day.gym { border: 2px solid var(--color-secondary); background: var(--color-secondary-highlight); }
-.plan-day-gym-icon { font-size: 0.65rem; line-height: 1; margin-bottom: 1px; }
-.plan-day-breakdown { font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 2px; font-variant-numeric: tabular-nums; line-height: 1.2; }
+/* Gym day styling in weekly plan — gym indicated by icon inside .plan-day-type */
 
 /* Ratio compliance line */
 .ratio-compliance { font-size: var(--text-xs); color: var(--color-text-muted); text-align: center; margin-top: var(--space-3); line-height: 1.5; }
@@ -2458,7 +2464,8 @@ function renderTrainingPlan() {
   }
 
   // Weekly row
-  let weekHtml = '<div class="plan-week">';
+  let weekHtml = '<div style="display:flex;justify-content:flex-end;gap:var(--space-3);padding:0 var(--space-1) var(--space-1);font-size:0.55rem;color:var(--color-text-faint)"><span><span style="color:var(--chart-primary);font-weight:700">\u25CF</span> pull sets</span><span><span style="color:var(--chart-secondary);font-weight:700">\u25CF</span> push sets</span></div>';
+  weekHtml += '<div class="plan-week">';
   weekDates.forEach((date, i) => {
     const sched = plan.schedule[i];
     const dateKey = toLocalDateKey(date);
@@ -2484,18 +2491,15 @@ function renderTrainingPlan() {
     weekHtml += `<div class="${cls}" data-plan-day-idx="${i}" data-plan-date="${dateKey}">`;
     weekHtml += `<div class="plan-day-label">${dayLabels[i]}</div>`;
     if (isRest) {
-      weekHtml += `<div class="plan-day-sets">—</div>`;
-      weekHtml += `<div class="plan-day-volume">Rest</div>`;
+      weekHtml += `<div class="plan-day-type rest">—</div>`;
     } else if (isGym) {
-      weekHtml += `<div class="plan-day-sets">${dayTotal}</div>`;
-      weekHtml += `<div class="plan-day-volume">Gym</div>`;
-      weekHtml += `<div class="plan-day-breakdown">${sched.pullSets} pull</div>`;
-      weekHtml += `<div class="plan-day-gym-icon">🏋️</div>`;
+      weekHtml += `<div class="plan-day-type gym">🏋️ Gym</div>`;
+      weekHtml += `<div class="plan-day-sets-detail">${sched.pullSets} pull</div>`;
     } else {
-      weekHtml += `<div class="plan-day-sets">${dayTotal}</div>`;
-      weekHtml += `<div class="plan-day-volume">${volLabels[sched.day] || sched.day}</div>`;
-      weekHtml += `<div class="plan-day-breakdown">${sched.pushSets} push<br>${sched.pullSets} pull</div>`;
+      weekHtml += `<div class="plan-day-type ${sched.day}">${volLabels[sched.day] || sched.day}</div>`;
+      weekHtml += `<div class="plan-day-sets-detail"><span style="color:var(--chart-primary)">${sched.pullSets}</span>\u2009/\u2009<span style="color:var(--chart-secondary)">${sched.pushSets}</span></div>`;
     }
+    if (isDone || (isPast && hasWorkout)) weekHtml += `<div class="plan-day-check">\u2713</div>`;
     weekHtml += '</div>';
   });
   weekHtml += '</div>';
@@ -2586,7 +2590,7 @@ function renderTrainingPlan() {
     const targetLabel = targetRatio >= 1
       ? `${targetRatio.toFixed(1)} push : 1 pull`
       : `1 push : ${(1/targetRatio).toFixed(1)} pull`;
-    const actualLabel = `${weekPushSets} push : ${weekPullSets} pull`;
+    const actualLabel = `${weekPushSets} push sets : ${weekPullSets} pull sets`;
     const diff = Math.abs(actualRatio - targetRatio);
     if (diff <= 0.3) {
       complianceHtml = `<div class="ratio-compliance">This week: ${actualLabel}<br><span class="good">On track for ${targetLabel}</span></div>`;
@@ -2901,7 +2905,7 @@ function renderProgressChart() {
   const pushHistory = (tiers.pushup && tiers.pushup.maxHistory) || [];
   let chartHtml = '';
   if (pullHistory.length <= 1 && pushHistory.length <= 1) {
-    chartHtml = `<div class="progress-chart-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:40px;height:40px;color:var(--color-text-faint)"><path d="M3 3v18h18"/><path d="M7 16l4-8 4 4 4-6"/></svg>Complete a test cycle to see max trends</div>`;
+    chartHtml = `<div class="progress-chart-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:40px;height:40px;color:var(--color-text-faint)"><path d="M3 3v18h18"/><path d="M7 16l4-8 4 4 4-6"/></svg>Complete a test cycle to see max trends<br><span class="msg-action" onclick="startMaxTest('pullup')" style="margin-top:var(--space-2);display:inline-block">Take a Max Test \u2192</span></div>`;
   } else {
     chartHtml = `<div class="progress-chart-wrap"><canvas id="progressChartCanvas"></canvas></div>`;
   }
