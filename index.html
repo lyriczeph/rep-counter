@@ -4056,6 +4056,7 @@ async function signInFromSettings() {
 }
 
 async function signOut() {
+  if (!confirm('Sign out?')) return;
   await sb.auth.signOut();
   currentUser = null;
   currentProfile = null;
@@ -4107,6 +4108,7 @@ function renderHistory() {
 }
 
 function deleteWorkout(i) {
+  if (!confirm('Delete this workout?')) return;
   const workout = state.history[i];
   const workoutId = workout && workout.id;
   state.history.splice(i, 1); saveState(); renderHistory();
