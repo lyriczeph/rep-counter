@@ -1805,7 +1805,7 @@ async function syncFromCloud() {
       }));
     }
     if (sRes.data) {
-      state.restSeconds = sRes.data.rest_seconds || 5;
+      state.restSeconds = sRes.data.rest_seconds || 10;
       state.targetPullups = sRes.data.target_pullups || 10;
       state.targetPushups = sRes.data.target_pushups || 20;
       document.getElementById('restTime').value = state.restSeconds;
@@ -1866,10 +1866,10 @@ async function saveSettingsToCloud() {
 
 function saveState() { saveStateLocal(); }
 
-const defaults = { currentReps: 0, sets: [], setNumber: 1, history: [], restSeconds: 5, targetPullups: 10, targetPushups: 20, exercise: 'pullup', variant: 'standard', currentWeight: 10 };
+const defaults = { currentReps: 0, sets: [], setNumber: 1, history: [], restSeconds: 10, targetPullups: 10, targetPushups: 20, exercise: 'pullup', variant: 'standard', currentWeight: 10 };
 const saved = loadStateLocal() || {};
 let state = Object.assign({}, defaults, {
-  history: saved.history || [], restSeconds: saved.restSeconds || 5,
+  history: saved.history || [], restSeconds: saved.restSeconds || 10,
   targetPullups: saved.targetPullups || 10, targetPushups: saved.targetPushups || 20,
   gymDays: Array.isArray(saved.gymDays) ? saved.gymDays : [],
   gymDayOverrides: saved.gymDayOverrides || {},
@@ -3330,7 +3330,10 @@ document.getElementById('finishSet').addEventListener('click', () => {
   localStorage.setItem('repcounter-lastset', Date.now().toString());
   updateNextSetCard();
   checkExerciseCompletion();
-  if (state.restSeconds > 0) startRest();
+  // Skip rest timer when switching exercises (pull→push or push→pull)
+  const nextEx = getNextExercise();
+  const justSwitching = nextEx && nextEx.exercise !== setData.exercise;
+  if (state.restSeconds > 0 && !justSwitching) startRest();
 });
 
 function renderCurrentSets() {
@@ -4206,7 +4209,7 @@ function deleteWorkout(i) {
 
 // ─── Settings ───
 document.getElementById('restTime').value = state.restSeconds;
-document.getElementById('restTime').addEventListener('change', e => { state.restSeconds = parseInt(e.target.value)||5; saveState(); saveSettingsToCloud(); });
+document.getElementById('restTime').addEventListener('change', e => { state.restSeconds = parseInt(e.target.value)||10; saveState(); saveSettingsToCloud(); });
 document.getElementById('clearHistory').addEventListener('click', () => { if (confirm('Clear all workout history?')) { state.history = []; saveState(); renderHistory(); } });
 document.getElementById('exportData').addEventListener('click', () => {
   const blob = new Blob([JSON.stringify(state.history, null, 2)], { type: 'application/json' });
@@ -4586,8 +4589,13 @@ function updateNextSetCard() {
   const tipText = VARIANT_TIPS[tipKey] || '';
   const tipEl = document.getElementById('nextSetTip');
 
-  // RESTING (< 15 min since last set and not first set)
-  if (minSince < 15 && !isFirstSet) {
+  // Detect if we're switching exercises (pull → push or push → pull)
+  const lastEx = (state.sets && state.sets.length > 0) ? state.sets[state.sets.length - 1].exercise : null;
+  const isSwitching = lastEx && lastEx !== next.exercise;
+
+  // RESTING — only when doing the SAME exercise again (< 15 min since last set)
+  // When switching exercises, skip rest and go straight to READY
+  if (minSince < 15 && !isFirstSet && !isSwitching) {
     labelEl.textContent = 'RESTING';
     progressEl.textContent = totalDone + '/' + totalTarget + ' sets';
     const instrText = next.variant === 'standard' ? next.reps + ' \u00D7 ' + exLabel : next.reps + ' \u00D7 ' + variantLabel + ' ' + exLabel;
@@ -4595,7 +4603,7 @@ function updateNextSetCard() {
     instructionEl.className = 'next-set-instruction resting';
     barFill.style.width = barPct + '%';
     barFill.className = 'next-set-bar-fill ' + exClass;
-    metaEl.textContent = minSince + ' min since last set — rest a bit more';
+    metaEl.textContent = minSince + ' min since last set \u2014 rest a bit more';
     if (tipEl) tipEl.textContent = tipText;
     btn.textContent = 'Rest a bit more...';
     btn.classList.remove('hidden');
@@ -4607,7 +4615,7 @@ function updateNextSetCard() {
       if (m >= 15) {
         updateNextSetCard();
       } else {
-        metaEl.textContent = m + ' min since last set — rest a bit more';
+        metaEl.textContent = m + ' min since last set \u2014 rest a bit more';
       }
     }, 30000);
     return;
@@ -5248,7 +5256,10 @@ newFinishSetBtn.addEventListener('click', () => {
   localStorage.setItem('repcounter-lastset', Date.now().toString());
   updateNextSetCard();
   checkExerciseCompletion();
-  if (state.restSeconds > 0) startRest();
+  // Skip rest timer when switching exercises (pull→push or push→pull)
+  const nextExAuto = getNextExercise();
+  const justSwitchingAuto = nextExAuto && nextExAuto.exercise !== setData.exercise;
+  if (state.restSeconds > 0 && !justSwitchingAuto) startRest();
 
   // Auto-detection: check if reps exceed current tier threshold
   checkAutoDetection(exerciseJustDone, repsJustDone);
