@@ -980,7 +980,7 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
     <div id="tierSettingsSection"></div>
 
     <div class="section-label">Gym Days</div>
-    <div style="padding:var(--space-2) var(--space-4);font-size:var(--text-xs);color:var(--color-text-muted)">On gym days, push-ups are skipped (you press in the gym) and pull-ups are reduced to easy maintenance sets.</div>
+    <div style="padding:var(--space-2) var(--space-4);font-size:var(--text-xs);color:var(--color-text-muted)">On gym days, sets are reduced to easy maintenance volume. Heavy days next to gym days are automatically downgraded to medium for recovery.</div>
     <div class="gym-day-row" id="gymDaySelector"></div>
 
     <div class="section-label">Push : Pull Ratio</div>
@@ -2039,10 +2039,12 @@ function generatePlan() {
     // Check if this day is a gym day (weekly override first, then recurring default)
     const isGym = weekOverrides ? (weekOverrides.includes(idx)) : gymDays.includes(idx);
 
-    // Gym day overrides everything — even rest days in the phase schedule
+    // Gym day: light volume — easy pull-ups + minimal push-ups
     if (isGym) {
       const baseSets = SET_COUNTS[day === 'rest' ? 'light' : day];
-      return { day: 'gym', pullSets: Math.min(3, Math.max(1, Math.floor(baseSets * 0.4))), pushSets: 0 };
+      const pullSets = Math.min(3, Math.max(1, Math.floor(baseSets * 0.4)));
+      const pushSets = Math.max(1, Math.floor(baseSets * 0.2)); // 1 easy push set
+      return { day: 'gym', pullSets, pushSets };
     }
 
     if (day === 'rest') return { day: 'rest', pullSets: 0, pushSets: 0 };
@@ -2056,10 +2058,13 @@ function generatePlan() {
     return { day, pullSets, pushSets };
   });
 
-  // Downgrade heavy day before a gym day to medium
+  // Downgrade heavy days adjacent to gym days (before and after) to medium for recovery
   schedule.forEach((s, idx) => {
+    if (s.day !== 'heavy') return;
+    const prevIdx = (idx + 6) % 7;
     const nextIdx = (idx + 1) % 7;
-    if (schedule[nextIdx].day === 'gym' && s.day === 'heavy') {
+    const adjacentToGym = schedule[nextIdx].day === 'gym' || schedule[prevIdx].day === 'gym';
+    if (adjacentToGym) {
       const totalSets = SET_COUNTS['medium'];
       if (isBeginner) { s.pullSets = Math.max(1, totalSets - 2); s.pushSets = Math.max(1, totalSets - 2); }
       else {
@@ -2283,9 +2288,9 @@ function renderDailyBriefing() {
   if (sched.day === 'rest') {
     heading = '🧘 Recovery Day';
     body = 'No sets planned. Your nervous system adapts during rest. Stretch, walk, come back stronger tomorrow.';
-  } else if (isGymDay && prog.pullSets === 0) {
+  } else if (isGymDay && prog.pullSets === 0 && prog.pushSets === 0) {
     heading = '🏋️ Gym Day';
-    body = `<div class="briefing-plan">${planText}</div>Easy maintenance pull-ups only \u2014 you\u2019re pressing in the gym today.`;
+    body = `<div class="briefing-plan">${planText}</div>Light maintenance sets today \u2014 save your energy for the gym.`;
     btn = `<button class="briefing-btn" onclick="document.querySelector('[data-nav=workout]').click()">Start First Set \u2192</button>`;
   } else if (prog.pullSets === 0 && prog.pushSets === 0) {
     heading = '\u2600\uFE0F Today\u2019s Plan';
@@ -2499,7 +2504,7 @@ function renderTrainingPlan() {
       weekHtml += `<div class="plan-day-type rest">—</div>`;
     } else if (isGym) {
       weekHtml += `<div class="plan-day-type gym">🏋️ Gym</div>`;
-      weekHtml += `<div class="plan-day-sets-detail">${sched.pullSets} pull</div>`;
+      weekHtml += `<div class="plan-day-sets-detail"><span style="color:var(--chart-primary)">${sched.pullSets} pull</span><br><span style="color:var(--chart-secondary)">${sched.pushSets} push</span></div>`;
     } else {
       weekHtml += `<div class="plan-day-type ${sched.day}">${volLabels[sched.day] || sched.day}</div>`;
       weekHtml += `<div class="plan-day-sets-detail"><span style="color:var(--chart-primary)">${sched.pullSets} pull</span><br><span style="color:var(--chart-secondary)">${sched.pushSets} push</span></div>`;
@@ -4265,7 +4270,7 @@ const RATIO_PRESETS = [
     { title: 'Why pull more than push?', body: 'Most people have stronger pushing muscles (chest, triceps) from daily activities and gym work. Pulling muscles (back, biceps) are often undertrained. A pull-biased ratio corrects this imbalance, improves posture, and protects your shoulders.' },
     { title: 'When to go balanced', body: 'If you don\u2019t bench press or do overhead work in the gym, a 1:1 ratio works well. Your push-ups and pull-ups will progress together. This is also good for beginners building a base.' },
     { title: 'When to go push-heavy', body: 'Rare for GTG. A push bias makes sense if you\u2019re specifically training for push-up tests or competitions, or if your pull-up volume is already high from climbing or gym back work.' },
-    { title: 'Gym day interaction', body: 'On gym days, the ratio is overridden \u2014 push-ups drop to zero (since you\u2019re pressing in the gym) and pull-ups reduce to easy maintenance sets. The ratio applies to all other training days.' },
+    { title: 'Gym day interaction', body: 'On gym days, both pull-ups and push-ups are reduced to light maintenance volume \u2014 just enough to keep the groove without interfering with your gym session. Heavy days before or after a gym day are automatically downgraded to medium so you recover properly. Your push:pull ratio applies to all other training days.' },
   ];
   container.innerHTML = items.map(item =>
     `<div class="philosophy-card"><div class="philosophy-card-header" onclick="this.parentElement.classList.toggle('expanded')">${item.title}<span class="philosophy-chevron">\u25B8</span></div><div class="philosophy-card-body"><p>${item.body}</p></div></div>`
