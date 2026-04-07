@@ -375,8 +375,19 @@ header h1 { font-size: var(--text-lg); font-weight: 700; display: flex; align-it
 .history-total.pushup { color: var(--color-secondary); }
 .history-ex-label { font-size: var(--text-xs); font-weight: 600; display: inline-flex; align-items: center; gap: var(--space-1); margin-bottom: var(--space-1); }
 .history-sets { font-size: var(--text-xs); color: var(--color-text-muted); }
-.history-delete { font-size: var(--text-xs); color: var(--color-error); margin-top: var(--space-2); opacity: 0.7; }
+.history-actions { display: flex; gap: var(--space-3); margin-top: var(--space-2); }
+.history-edit { font-size: var(--text-xs); color: var(--color-primary); opacity: 0.8; }
+.history-edit:hover { opacity: 1; }
+.history-delete { font-size: var(--text-xs); color: var(--color-error); opacity: 0.7; }
 .history-delete:hover { opacity: 1; }
+
+/* Inline set editor */
+.set-edit-row { display: flex; gap: var(--space-1); align-items: center; padding: var(--space-1) 0; flex-wrap: wrap; }
+.set-edit-row select, .set-edit-row input[type=number] { font: inherit; font-size: var(--text-xs); padding: 3px 6px;
+  border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-bg); color: var(--color-text); }
+.set-edit-row input[type=number] { width: 50px; }
+.set-edit-row select { max-width: 90px; }
+.set-edit-save { font-size: var(--text-xs); font-weight: 600; color: var(--color-primary); padding: 3px 8px; }
 
 .empty-state { text-align: center; padding: var(--space-16) var(--space-4); color: var(--color-text-muted); }
 .empty-state svg { width: 48px; height: 48px; margin: 0 auto var(--space-4); color: var(--color-text-faint); }
@@ -4195,7 +4206,7 @@ function renderHistory() {
       body += `<div class="history-ex-label" style="margin-top:var(--space-2)"><span class="ex-dot pushup"></span> Push-Ups — <span class="history-total pushup">${w.pushTotal} reps</span></div>
         <div class="history-sets">${us.map((s,j) => `Set ${j+1}: ${s.reps}${vLabel(s.variant)}${wLabel(s)}`).join(' · ')}</div>`;
     }
-    return `<div class="history-item"><div class="history-header"><span class="history-date">${dateStr}</span></div>${body}<button class="history-delete" onclick="deleteWorkout(${realIdx})">Delete</button></div>`;
+    return `<div class="history-item" id="histItem${realIdx}"><div class="history-header"><span class="history-date">${dateStr}</span></div>${body}<div class="history-actions"><button class="history-edit" onclick="editWorkout(${realIdx})">Edit</button><button class="history-delete" onclick="deleteWorkout(${realIdx})">Delete</button></div></div>`;
   }).join('');
 }
 
@@ -4205,6 +4216,83 @@ function deleteWorkout(i) {
   const workoutId = workout && workout.id;
   state.history.splice(i, 1); saveState(); renderHistory();
   if (workoutId) deleteWorkoutFromCloud(workoutId);
+}
+
+// ─── Workout Edit ───
+const PULL_VARIANTS = ['standard','chinup','eccentric','weighted','band_assisted','dead_hang','wide','close_grip','towel','lsit','typewriter'];
+const PUSH_VARIANTS = ['standard','diamond','archer','wide','incline','decline','eccentric','wall','knee','pike','deficit','onearm','tempo','slow_tempo','planche','handstand','weighted'];
+
+function editWorkout(histIdx) {
+  const w = state.history[histIdx];
+  if (!w) return;
+  const sets = parseSets(w.sets);
+  if (sets.length === 0) return;
+  const el = document.getElementById('histItem' + histIdx);
+  if (!el) return;
+
+  let html = '<div style="padding:var(--space-2) 0">';
+  sets.forEach((s, si) => {
+    const isPull = s.exercise === 'pullup';
+    const variants = isPull ? PULL_VARIANTS : PUSH_VARIANTS;
+    const exOpts = `<option value="pullup"${isPull ? ' selected' : ''}>Pull-Up</option><option value="pushup"${!isPull ? ' selected' : ''}>Push-Up</option>`;
+    const varOpts = variants.map(v => `<option value="${v}"${v === s.variant ? ' selected' : ''}>${variantLabelShort(v)}</option>`).join('');
+    html += `<div class="set-edit-row" data-set-idx="${si}">
+      <span style="font-size:var(--text-xs);font-weight:600;color:var(--color-text-muted);min-width:28px">Set ${si+1}</span>
+      <input type="number" class="edit-reps" value="${s.reps}" min="1" max="200">
+      <select class="edit-exercise" onchange="updateVariantOptions(this)">${exOpts}</select>
+      <select class="edit-variant">${varOpts}</select>
+    </div>`;
+  });
+  html += `<div style="display:flex;gap:var(--space-2);margin-top:var(--space-2)">
+    <button class="set-edit-save" onclick="saveWorkoutEdit(${histIdx})">Save</button>
+    <button style="font-size:var(--text-xs);color:var(--color-text-muted);padding:3px 8px" onclick="renderHistory()">Cancel</button>
+  </div></div>`;
+
+  // Replace the item content with the editor
+  const header = el.querySelector('.history-header').outerHTML;
+  el.innerHTML = header + html;
+}
+
+function updateVariantOptions(exSelect) {
+  const row = exSelect.closest('.set-edit-row');
+  const varSelect = row.querySelector('.edit-variant');
+  const isPull = exSelect.value === 'pullup';
+  const variants = isPull ? PULL_VARIANTS : PUSH_VARIANTS;
+  const currentVar = varSelect.value;
+  varSelect.innerHTML = variants.map(v => `<option value="${v}"${v === currentVar ? ' selected' : ''}>${variantLabelShort(v)}</option>`).join('');
+}
+
+function saveWorkoutEdit(histIdx) {
+  const w = state.history[histIdx];
+  if (!w) return;
+  const el = document.getElementById('histItem' + histIdx);
+  if (!el) return;
+
+  const rows = el.querySelectorAll('.set-edit-row');
+  const newSets = [];
+  rows.forEach(row => {
+    const reps = parseInt(row.querySelector('.edit-reps').value) || 1;
+    const exercise = row.querySelector('.edit-exercise').value;
+    const variant = row.querySelector('.edit-variant').value;
+    const setObj = { reps, exercise, variant };
+    // Preserve weight if variant is weighted
+    if (variant === 'weighted') {
+      const origIdx = parseInt(row.dataset.setIdx);
+      const origSet = parseSets(w.sets)[origIdx];
+      if (origSet && origSet.weight) setObj.weight = origSet.weight;
+    }
+    newSets.push(setObj);
+  });
+
+  // Update workout
+  w.sets = newSets;
+  w.pullTotal = newSets.filter(s => s.exercise === 'pullup').reduce((a, s) => a + s.reps, 0);
+  w.pushTotal = newSets.filter(s => s.exercise === 'pushup').reduce((a, s) => a + s.reps, 0);
+  saveState();
+  saveWorkoutToCloud(w); // re-sync edited workout
+  renderHistory();
+  renderCalendar();
+  showToast('Workout updated');
 }
 
 // ─── Settings ───
