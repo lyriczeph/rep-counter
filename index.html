@@ -4591,14 +4591,16 @@ function getNextExercise() {
     // Tied: pick opposite of last set done
     const lastEx = (state.sets && state.sets.length > 0) ? state.sets[state.sets.length - 1].exercise : null;
     if (!lastEx) {
-      // Check history for last set today
+      // Check history for the most recent set today
       const todayKey = toLocalDateKey(new Date());
-      const todayWorkouts = state.history.filter(w => toLocalDateKey(w.date) === todayKey);
+      const todayWorkouts = state.history
+        .filter(w => toLocalDateKey(w.date) === todayKey)
+        .sort((a, b) => new Date(b.date) - new Date(a.date)); // newest first
       let lastHistEx = null;
-      todayWorkouts.forEach(w => {
-        const sets = parseSets(w.sets);
+      if (todayWorkouts.length > 0) {
+        const sets = parseSets(todayWorkouts[0].sets);
         if (sets.length > 0) lastHistEx = sets[sets.length - 1].exercise;
-      });
+      }
       exercise = lastHistEx === 'pullup' ? 'pushup' : 'pullup';
     } else {
       exercise = lastEx === 'pullup' ? 'pushup' : 'pullup';
