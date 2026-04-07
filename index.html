@@ -4236,11 +4236,17 @@ function editWorkout(histIdx) {
     const variants = isPull ? PULL_VARIANTS : PUSH_VARIANTS;
     const exOpts = `<option value="pullup"${isPull ? ' selected' : ''}>Pull-Up</option><option value="pushup"${!isPull ? ' selected' : ''}>Push-Up</option>`;
     const varOpts = variants.map(v => `<option value="${v}"${v === s.variant ? ' selected' : ''}>${variantLabelShort(v)}</option>`).join('');
+    const isWeighted = s.variant === 'weighted';
+    const weightVal = s.weight || '';
     html += `<div class="set-edit-row" data-set-idx="${si}">
       <span style="font-size:var(--text-xs);font-weight:600;color:var(--color-text-muted);min-width:28px">Set ${si+1}</span>
       <input type="number" class="edit-reps" value="${s.reps}" min="1" max="200">
       <select class="edit-exercise" onchange="updateVariantOptions(this)">${exOpts}</select>
-      <select class="edit-variant">${varOpts}</select>
+      <select class="edit-variant" onchange="toggleWeightInput(this)">${varOpts}</select>
+      <span class="edit-weight-wrap" style="${isWeighted ? '' : 'display:none'};display:${isWeighted ? 'flex' : 'none'};align-items:center;gap:3px">
+        <input type="number" class="edit-weight" value="${weightVal}" min="1" max="999" placeholder="lbs" style="width:48px">
+        <span style="font-size:0.6rem;color:var(--color-text-faint)">lbs</span>
+      </span>
     </div>`;
   });
   html += `<div style="display:flex;gap:var(--space-2);margin-top:var(--space-2)">
@@ -4253,6 +4259,12 @@ function editWorkout(histIdx) {
   el.innerHTML = header + html;
 }
 
+function toggleWeightInput(varSelect) {
+  const row = varSelect.closest('.set-edit-row');
+  const wrap = row.querySelector('.edit-weight-wrap');
+  if (wrap) wrap.style.display = varSelect.value === 'weighted' ? 'flex' : 'none';
+}
+
 function updateVariantOptions(exSelect) {
   const row = exSelect.closest('.set-edit-row');
   const varSelect = row.querySelector('.edit-variant');
@@ -4260,6 +4272,7 @@ function updateVariantOptions(exSelect) {
   const variants = isPull ? PULL_VARIANTS : PUSH_VARIANTS;
   const currentVar = varSelect.value;
   varSelect.innerHTML = variants.map(v => `<option value="${v}"${v === currentVar ? ' selected' : ''}>${variantLabelShort(v)}</option>`).join('');
+  toggleWeightInput(varSelect); // update weight field visibility after variant list changes
 }
 
 function saveWorkoutEdit(histIdx) {
@@ -4275,11 +4288,10 @@ function saveWorkoutEdit(histIdx) {
     const exercise = row.querySelector('.edit-exercise').value;
     const variant = row.querySelector('.edit-variant').value;
     const setObj = { reps, exercise, variant };
-    // Preserve weight if variant is weighted
     if (variant === 'weighted') {
-      const origIdx = parseInt(row.dataset.setIdx);
-      const origSet = parseSets(w.sets)[origIdx];
-      if (origSet && origSet.weight) setObj.weight = origSet.weight;
+      const weightInput = row.querySelector('.edit-weight');
+      const weight = weightInput ? parseInt(weightInput.value) : 0;
+      if (weight > 0) setObj.weight = weight;
     }
     newSets.push(setObj);
   });
